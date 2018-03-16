@@ -123,7 +123,7 @@ public:
     std::string *foundValue;
     bool foundEntry;
 
-    CBatchScanner() : foundEntry(false) {}
+    CBatchScanner() : deleted(NULL), foundValue(NULL), foundEntry(false) {}
 
     virtual void Put(const leveldb::Slice& key, const leveldb::Slice& value) {
         if (key.ToString() == needle) {

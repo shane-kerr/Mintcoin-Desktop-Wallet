@@ -168,7 +168,9 @@ class LRUCache {
 };
 
 LRUCache::LRUCache()
-    : usage_(0) {
+    : usage_(0),
+      capacity_(0) // set just to avoid uninitialized values
+      {
   // Make empty circular linked list
   lru_.next = &lru_;
   lru_.prev = &lru_;

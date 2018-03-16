@@ -46,6 +46,7 @@ CDBEnv::CDBEnv() : dbenv(DB_CXX_NO_EXCEPTIONS)
 {
     fDbEnvInit = false;
     fMockDb = false;
+    fDetachDB = false;
 }
 
 CDBEnv::~CDBEnv()

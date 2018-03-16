@@ -290,10 +290,15 @@ class Benchmark {
 
   Benchmark()
   : db_(NULL),
+    db_num_(0),
     num_(FLAGS_num),
     reads_(FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
+    start_(0.0),
+    last_op_finish_(0.0),
     bytes_(0),
-    rand_(301) {
+    rand_(301),
+    done_(0),
+    next_report_(100) {
     std::vector<std::string> files;
     std::string test_dir;
     Env::Default()->GetTestDirectory(&test_dir);

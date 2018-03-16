@@ -172,6 +172,9 @@ class Version::LevelFileNumIterator : public Iterator {
       : icmp_(icmp),
         flist_(flist),
         index_(flist->size()) {        // Marks as invalid
+    for (int i=0; i<sizeof(value_buf_); i++) {
+        value_buf_[i] = 0;
+    }
   }
   virtual bool Valid() const {
     return index_ < flist_->size();

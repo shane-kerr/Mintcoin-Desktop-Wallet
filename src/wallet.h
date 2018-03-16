@@ -792,7 +792,7 @@ public:
     std::string strComment;
     mapValue_t mapValue;
     int64 nOrderPos;  // position in ordered transaction list
-    uint64 nEntryNo;
+    uint64 nEntryNo;  // apparently unused field
 
     CAccountingEntry()
     {
@@ -807,6 +807,7 @@ public:
         strOtherAccount.clear();
         strComment.clear();
         nOrderPos = -1;
+        nEntryNo = 0;
     }
 
     IMPLEMENT_SERIALIZE

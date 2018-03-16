@@ -159,12 +159,14 @@ void CKey::Reset()
 
 CKey::CKey()
 {
+    fCompressedPubKey = false;
     pkey = NULL;
     Reset();
 }
 
 CKey::CKey(const CKey& b)
 {
+    fCompressedPubKey = false;
     pkey = EC_KEY_dup(b.pkey);
     if (pkey == NULL)
         throw key_error("CKey::CKey(const CKey&) : EC_KEY_dup failed");
@@ -176,6 +178,7 @@ CKey& CKey::operator=(const CKey& b)
     if (!EC_KEY_copy(pkey, b.pkey))
         throw key_error("CKey::operator=(const CKey&) : EC_KEY_copy failed");
     fSet = b.fSet;
+    fCompressedPubKey = b.fCompressedPubKey;
     return (*this);
 }
 

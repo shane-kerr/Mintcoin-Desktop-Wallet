@@ -30,9 +30,9 @@ struct AddressTableEntry
 
     AddressTableEntry() {}
     AddressTableEntry(Type type, const QString &label, const QString &address):
-        type(type), label(label), address(address) {}
+        type(type), updated(false), label(label), address(address) {}
     AddressTableEntry(Type type, const QString &label, const QString &address, uint64 amount):
-        type(type), label(label), address(address), amount(amount) {}
+        type(type), updated(false), label(label), address(address), amount(amount) {}
 };
 
 struct AddressTableEntryLessThan

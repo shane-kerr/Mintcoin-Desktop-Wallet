@@ -106,13 +106,13 @@ OptionsDialog::~OptionsDialog()
 void OptionsDialog::setModel(OptionsModel *model)
 {
     this->model = model;
-    if(model->isLocked==false)
-        ui->passwordOnSend->setEnabled(false);
-    else
-        ui->passwordOnSend->setEnabled(true);
-
     if(model)
     {
+        if(model->isLocked==false)
+            ui->passwordOnSend->setEnabled(false);
+        else
+            ui->passwordOnSend->setEnabled(true);
+
         connect(model, SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
         mapper->setModel(model);

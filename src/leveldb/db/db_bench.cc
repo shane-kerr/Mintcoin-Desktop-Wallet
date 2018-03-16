@@ -281,7 +281,7 @@ struct SharedState {
   int num_done;
   bool start;
 
-  SharedState() : cv(&mu) { }
+  SharedState() : cv(&mu), total(0), num_initialized(0), num_done(0), start(false) { }
 };
 
 // Per-thread state for concurrent executions of the same benchmark.
@@ -293,7 +293,7 @@ struct ThreadState {
 
   ThreadState(int index)
       : tid(index),
-        rand(1000 + index) {
+        rand(1000 + index), shared(NULL) {
   }
 };
 

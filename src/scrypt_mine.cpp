@@ -37,7 +37,7 @@
 #include "util.h"
 #include "net.h"
 
-extern bool fShutdown;
+extern volatile bool fShutdown;
 extern bool fGenerateBitcoins;
 
 extern CBlockIndex* pindexBest;
