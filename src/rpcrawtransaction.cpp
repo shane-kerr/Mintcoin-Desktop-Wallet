@@ -45,37 +45,37 @@ void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out)
 void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
 {
     entry.push_back(Pair("txid", tx.GetHash().GetHex()));
-    entry.push_back(Pair("version", tx.nVersion));
-    entry.push_back(Pair("time", (boost::int64_t)tx.nTime));
-    entry.push_back(Pair("locktime", (boost::int64_t)tx.nLockTime));
+    entry.push_back(Pair("version", tx.Get_nVersion()));
+    entry.push_back(Pair("time", (boost::int64_t)tx.Get_nTime()));
+    entry.push_back(Pair("locktime", (boost::int64_t)tx.Get_nLockTime()));
     Array vin;
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    BOOST_FOREACH(const CTxIn& txin, tx.Get_vin())
     {
         Object in;
         if (tx.IsCoinBase())
-            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            in.push_back(Pair("coinbase", HexStr(txin.Get_scriptSig().begin(), txin.Get_scriptSig().end())));
         else
         {
-            in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
-            in.push_back(Pair("vout", (boost::int64_t)txin.prevout.n));
+            in.push_back(Pair("txid", txin.Get_prevout().Get_hash().GetHex()));
+            in.push_back(Pair("vout", (boost::int64_t)txin.Get_prevout().Get_n()));
             Object o;
-            o.push_back(Pair("asm", txin.scriptSig.ToString()));
-            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            o.push_back(Pair("asm", txin.Get_scriptSig().ToString()));
+            o.push_back(Pair("hex", HexStr(txin.Get_scriptSig().begin(), txin.Get_scriptSig().end())));
             in.push_back(Pair("scriptSig", o));
         }
-        in.push_back(Pair("sequence", (boost::int64_t)txin.nSequence));
+        in.push_back(Pair("sequence", (boost::int64_t)txin.Get_nSequence()));
         vin.push_back(in);
     }
     entry.push_back(Pair("vin", vin));
     Array vout;
-    for (unsigned int i = 0; i < tx.vout.size(); i++)
+    for (unsigned int i = 0; i < tx.Get_vout().size(); i++)
     {
-        const CTxOut& txout = tx.vout[i];
+        const CTxOut& txout = tx.Get_vout()[i];
         Object out;
-        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
+        out.push_back(Pair("value", ValueFromAmount(txout.Get_nValue())));
         out.push_back(Pair("n", (boost::int64_t)i));
         Object o;
-        ScriptPubKeyToJSON(txout.scriptPubKey, o);
+        ScriptPubKeyToJSON(txout.Get_scriptPubKey(), o);
         out.push_back(Pair("scriptPubKey", o));
         vout.push_back(out);
     }
@@ -90,9 +90,9 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
             CBlockIndex* pindex = (*mi).second;
             if (pindex->IsInMainChain())
             {
-                entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
-                entry.push_back(Pair("time", (boost::int64_t)pindex->nTime));
-                entry.push_back(Pair("blocktime", (boost::int64_t)pindex->nTime));
+                entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->Get_nHeight()));
+                entry.push_back(Pair("time", (boost::int64_t)pindex->GetBlockTime()));
+                entry.push_back(Pair("blocktime", (boost::int64_t)pindex->GetBlockTime()));
             }
             else
                 entry.push_back(Pair("confirmations", 0));
@@ -182,22 +182,22 @@ Value listunspent(const Array& params, bool fHelp)
         if(setAddress.size())
         {
             CTxDestination address;
-            if(!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+            if(!ExtractDestination(out.tx->Get_vout()[out.i].Get_scriptPubKey(), address))
                 continue;
 
             if (!setAddress.count(address))
                 continue;
         }
 
-        int64 nValue = out.tx->vout[out.i].nValue;
-        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+        int64 nValue = out.tx->Get_vout()[out.i].Get_nValue();
+        const CScript& pk = out.tx->Get_vout()[out.i].Get_scriptPubKey();
         Object entry;
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
         entry.push_back(Pair("scriptPubKey", HexStr(pk.begin(), pk.end())));
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
         entry.push_back(Pair("confirmations",out.nDepth));
-        entry.push_back(Pair("txtime", DateTimeStrFormat(out.tx->nTime)));
+        entry.push_back(Pair("txtime", DateTimeStrFormat(out.tx->Get_nTime())));
         entry.push_back(Pair("txtimereceived", DateTimeStrFormat(out.tx->nTimeReceived)));
         results.push_back(entry);
     }
@@ -243,7 +243,7 @@ Value createrawtransaction(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
         CTxIn in(COutPoint(uint256(txid), nOutput));
-        rawTx.vin.push_back(in);
+        rawTx.Get_vin().push_back(in);
     }
 
     set<CBitcoinAddress> setAddress;
@@ -262,7 +262,7 @@ Value createrawtransaction(const Array& params, bool fHelp)
         int64 nAmount = AmountFromValue(s.value_);
 
         CTxOut out(nAmount, scriptPubKey);
-        rawTx.vout.push_back(out);
+        rawTx.Get_vout().push_back(out);
     }
 
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
@@ -339,7 +339,7 @@ Value signrawtransaction(const Array& params, bool fHelp)
 
     // Fetch previous transactions (inputs):
     map<COutPoint, CScript> mapPrevOut;
-    for (unsigned int i = 0; i < mergedTx.vin.size(); i++)
+    for (unsigned int i = 0; i < mergedTx.Get_vin().size(); i++)
     {
         CTransaction tempTx;
         MapPrevTx mapPrevTx;
@@ -348,15 +348,15 @@ Value signrawtransaction(const Array& params, bool fHelp)
         bool fInvalid;
 
         // FetchInputs aborts on failure, so we go one at a time.
-        tempTx.vin.push_back(mergedTx.vin[i]);
+        tempTx.Get_vin().push_back(mergedTx.Get_vin()[i]);
         tempTx.FetchInputs(txdb, unused, false, false, mapPrevTx, fInvalid);
 
         // Copy results into mapPrevOut:
-        BOOST_FOREACH(const CTxIn& txin, tempTx.vin)
+        BOOST_FOREACH(const CTxIn& txin, tempTx.Get_vin())
         {
-            const uint256& prevHash = txin.prevout.hash;
-            if (mapPrevTx.count(prevHash) && mapPrevTx[prevHash].second.vout.size()>txin.prevout.n)
-                mapPrevOut[txin.prevout] = mapPrevTx[prevHash].second.vout[txin.prevout.n].scriptPubKey;
+            const uint256& prevHash = txin.Get_prevout().Get_hash();
+            if (mapPrevTx.count(prevHash) && mapPrevTx[prevHash].second.Get_vout().size()>txin.Get_prevout().Get_n())
+                mapPrevOut[txin.Get_prevout()] = mapPrevTx[prevHash].second.Get_vout()[txin.Get_prevout().Get_n()].Get_scriptPubKey();
         }
     }
 
@@ -452,27 +452,27 @@ Value signrawtransaction(const Array& params, bool fHelp)
     bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
 
     // Sign what we can:
-    for (unsigned int i = 0; i < mergedTx.vin.size(); i++)
+    for (unsigned int i = 0; i < mergedTx.Get_vin().size(); i++)
     {
-        CTxIn& txin = mergedTx.vin[i];
-        if (mapPrevOut.count(txin.prevout) == 0)
+        CTxIn& txin = mergedTx.Get_vin()[i];
+        if (mapPrevOut.count(txin.Get_prevout()) == 0)
         {
             fComplete = false;
             continue;
         }
-        const CScript& prevPubKey = mapPrevOut[txin.prevout];
+        const CScript& prevPubKey = mapPrevOut[txin.Get_prevout()];
 
-        txin.scriptSig.clear();
+        txin.Get_scriptSig().clear();
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
-        if (!fHashSingle || (i < mergedTx.vout.size()))
+        if (!fHashSingle || (i < mergedTx.Get_vout().size()))
             SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
 
         // ... and merge in other signatures:
         BOOST_FOREACH(const CTransaction& txv, txVariants)
         {
-            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+            txin.Set_scriptSig(CombineSignatures(prevPubKey, mergedTx, i, txin.Get_scriptSig(), txv.Get_vin()[i].Get_scriptSig()));
         }
-        if (!VerifyScript(txin.scriptSig, prevPubKey, mergedTx, i, true, true, 0))
+        if (!VerifyScript(txin.Get_scriptSig(), prevPubKey, mergedTx, i, true, true, 0))
             fComplete = false;
     }
 

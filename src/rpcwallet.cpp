@@ -40,9 +40,9 @@ void WalletTxToJSON(const CWalletTx& wtx, Object& entry)
         entry.push_back(Pair("generated", true));
     if (confirms)
     {
-        entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
-        entry.push_back(Pair("blockindex", wtx.nIndex));
-        entry.push_back(Pair("blocktime", (boost::int64_t)(mapBlockIndex[wtx.hashBlock]->nTime)));
+        entry.push_back(Pair("blockhash", wtx.Get_hashBlock().GetHex()));
+        entry.push_back(Pair("blockindex", wtx.Get_nIndex()));
+        entry.push_back(Pair("blocktime", (boost::int64_t)(mapBlockIndex[wtx.Get_hashBlock()]->GetBlockTime())));
     }
     entry.push_back(Pair("txid", wtx.GetHash().GetHex()));
     entry.push_back(Pair("time", (boost::int64_t)wtx.GetTxTime()));
@@ -77,7 +77,7 @@ Value getinfo(const Array& params, bool fHelp)
     obj.push_back(Pair("newmint",       ValueFromAmount(pwalletMain->GetNewMint())));
     obj.push_back(Pair("stake",         ValueFromAmount(pwalletMain->GetStake())));
     obj.push_back(Pair("blocks",        (int)nBestHeight));
-    obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->nMoneySupply)));
+    obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->Get_nMoneySupply())));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
     obj.push_back(Pair("ip",            addrSeenByPeer.ToStringIP()));
@@ -169,8 +169,8 @@ CBitcoinAddress GetAccountAddress(string strAccount, bool bForceNew=false)
              ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-                if (txout.scriptPubKey == scriptPubKey)
+            BOOST_FOREACH(const CTxOut& txout, wtx.Get_vout())
+                if (txout.Get_scriptPubKey() == scriptPubKey)
                     bKeyUsed = true;
         }
     }
@@ -444,10 +444,10 @@ Value getreceivedbyaddress(const Array& params, bool fHelp)
         if (wtx.IsCoinBase() || wtx.IsCoinStake() || !wtx.IsFinal())
             continue;
 
-        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
-            if (txout.scriptPubKey == scriptPubKey)
+        BOOST_FOREACH(const CTxOut& txout, wtx.Get_vout())
+            if (txout.Get_scriptPubKey() == scriptPubKey)
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
-                    nAmount += txout.nValue;
+                    nAmount += txout.Get_nValue();
     }
 
     return  ValueFromAmount(nAmount);
@@ -490,12 +490,12 @@ Value getreceivedbyaccount(const Array& params, bool fHelp)
         if (wtx.IsCoinBase() || wtx.IsCoinStake() || !wtx.IsFinal())
             continue;
 
-        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        BOOST_FOREACH(const CTxOut& txout, wtx.Get_vout())
         {
             CTxDestination address;
-            if (ExtractDestination(txout.scriptPubKey, address) && IsMine(*pwalletMain, address) && setAddress.count(address))
+            if (ExtractDestination(txout.Get_scriptPubKey(), address) && IsMine(*pwalletMain, address) && setAddress.count(address))
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
-                    nAmount += txout.nValue;
+                    nAmount += txout.Get_nValue();
         }
     }
 
@@ -872,14 +872,14 @@ Value ListReceived(const Array& params, bool fByAccounts)
         if (nDepth < nMinDepth)
             continue;
 
-        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        BOOST_FOREACH(const CTxOut& txout, wtx.Get_vout())
         {
             CTxDestination address;
-            if (!ExtractDestination(txout.scriptPubKey, address) || !IsMine(*pwalletMain, address))
+            if (!ExtractDestination(txout.Get_scriptPubKey(), address) || !IsMine(*pwalletMain, address))
                 continue;
 
             tallyitem& item = mapTally[address];
-            item.nAmount += txout.nValue;
+            item.nAmount += txout.Get_nValue();
             item.nConf = min(item.nConf, nDepth);
         }
     }
@@ -1212,7 +1212,7 @@ Value listsinceblock(const Array& params, bool fHelp)
             throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
     }
 
-    int depth = pindex ? (1 + nBestHeight - pindex->nHeight) : -1;
+    int depth = pindex ? (1 + nBestHeight - pindex->Get_nHeight()) : -1;
 
     Array transactions;
 
@@ -1232,12 +1232,12 @@ Value listsinceblock(const Array& params, bool fHelp)
     }
     else
     {
-        int target_height = pindexBest->nHeight + 1 - target_confirms;
+        int target_height = pindexBest->Get_nHeight() + 1 - target_confirms;
 
         CBlockIndex *block;
         for (block = pindexBest;
-             block && block->nHeight > target_height;
-             block = block->pprev)  { }
+             block && block->Get_nHeight() > target_height;
+             block = block->Get_pprev())  { }
 
         lastblock = block ? block->GetBlockHash() : 0;
     }
@@ -1301,9 +1301,9 @@ Value gettransaction(const Array& params, bool fHelp)
                     CBlockIndex* pindex = (*mi).second;
                     if (pindex->IsInMainChain())
                     {
-                        entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
-                        entry.push_back(Pair("txntime", (boost::int64_t)tx.nTime));
-                        entry.push_back(Pair("time", (boost::int64_t)pindex->nTime));
+                        entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->Get_nHeight()));
+                        entry.push_back(Pair("txntime", (boost::int64_t)tx.Get_nTime()));
+                        entry.push_back(Pair("time", (boost::int64_t)pindex->GetBlockTime()));
                     }
                     else
                         entry.push_back(Pair("confirmations", 0));

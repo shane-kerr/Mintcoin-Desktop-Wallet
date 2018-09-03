@@ -176,7 +176,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
     wallet->AvailableCoins(vCoins, true, coinControl);
 
     BOOST_FOREACH(const COutput& out, vCoins)
-        nBalance += out.tx->vout[out.i].nValue;
+        nBalance += out.tx->Get_vout()[out.i].Get_nValue();
      if(total > nBalance)
     {
         return AmountExceedsBalance;
@@ -416,8 +416,8 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
  {
      BOOST_FOREACH(const COutPoint& outpoint, vOutpoints)
      {
-         if (!wallet->mapWallet.count(outpoint.hash)) continue;
-         COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, wallet->mapWallet[outpoint.hash].GetDepthInMainChain());
+         if (!wallet->mapWallet.count(outpoint.Get_hash())) continue;
+         COutput out(&wallet->mapWallet[outpoint.Get_hash()], outpoint.Get_n(), wallet->mapWallet[outpoint.Get_hash()].GetDepthInMainChain());
          vOutputs.push_back(out);
      }
  }
@@ -432,8 +432,8 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
      // add locked coins
      BOOST_FOREACH(const COutPoint& outpoint, vLockedCoins)
      {
-         if (!wallet->mapWallet.count(outpoint.hash)) continue;
-         COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, wallet->mapWallet[outpoint.hash].GetDepthInMainChain());
+         if (!wallet->mapWallet.count(outpoint.Get_hash())) continue;
+         COutput out(&wallet->mapWallet[outpoint.Get_hash()], outpoint.Get_n(), wallet->mapWallet[outpoint.Get_hash()].GetDepthInMainChain());
          vCoins.push_back(out);
      }
  
@@ -441,14 +441,14 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
      {
          COutput cout = out;
  
-         while (wallet->IsChange(cout.tx->vout[cout.i]) && cout.tx->vin.size() > 0 && wallet->IsMine(cout.tx->vin[0]))
+         while (wallet->IsChange(cout.tx->Get_vout()[cout.i]) && cout.tx->Get_vin().size() > 0 && wallet->IsMine(cout.tx->Get_vin()[0]))
          {
-             if (!wallet->mapWallet.count(cout.tx->vin[0].prevout.hash)) break;
-             cout = COutput(&wallet->mapWallet[cout.tx->vin[0].prevout.hash], cout.tx->vin[0].prevout.n, 0);
+             if (!wallet->mapWallet.count(cout.tx->Get_vin()[0].Get_prevout().Get_hash())) break;
+             cout = COutput(&wallet->mapWallet[cout.tx->Get_vin()[0].Get_prevout().Get_hash()], cout.tx->Get_vin()[0].Get_prevout().Get_n(), 0);
          }
  
          CTxDestination address;
-         if(!ExtractDestination(cout.tx->vout[cout.i].scriptPubKey, address)) continue;
+         if(!ExtractDestination(cout.tx->Get_vout()[cout.i].Get_scriptPubKey(), address)) continue;
          mapCoins[CBitcoinAddress(address).ToString().c_str()].push_back(out);
      }
  }

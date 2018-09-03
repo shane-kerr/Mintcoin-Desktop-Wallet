@@ -201,24 +201,24 @@ public:
     int64 GetDebit(const CTxIn& txin) const;
     bool IsMine(const CTxOut& txout) const
     {
-        return ::IsMine(*this, txout.scriptPubKey);
+        return ::IsMine(*this, txout.Get_scriptPubKey());
     }
     int64 GetCredit(const CTxOut& txout) const
     {
-        if (!MoneyRange(txout.nValue))
+        if (!MoneyRange(txout.Get_nValue()))
             throw std::runtime_error("CWallet::GetCredit() : value out of range");
-        return (IsMine(txout) ? txout.nValue : 0);
+        return (IsMine(txout) ? txout.Get_nValue() : 0);
     }
     bool IsChange(const CTxOut& txout) const;
     int64 GetChange(const CTxOut& txout) const
     {
-        if (!MoneyRange(txout.nValue))
+        if (!MoneyRange(txout.Get_nValue()))
             throw std::runtime_error("CWallet::GetChange() : value out of range");
-        return (IsChange(txout) ? txout.nValue : 0);
+        return (IsChange(txout) ? txout.Get_nValue() : 0);
     }
     bool IsMine(const CTransaction& tx) const
     {
-        BOOST_FOREACH(const CTxOut& txout, tx.vout)
+        BOOST_FOREACH(const CTxOut& txout, tx.Get_vout())
             if (IsMine(txout))
                 return true;
         return false;
@@ -230,7 +230,7 @@ public:
     int64 GetDebit(const CTransaction& tx) const
     {
         int64 nDebit = 0;
-        BOOST_FOREACH(const CTxIn& txin, tx.vin)
+        BOOST_FOREACH(const CTxIn& txin, tx.Get_vin())
         {
             nDebit += GetDebit(txin);
             if (!MoneyRange(nDebit))
@@ -241,7 +241,7 @@ public:
     int64 GetCredit(const CTransaction& tx) const
     {
         int64 nCredit = 0;
-        BOOST_FOREACH(const CTxOut& txout, tx.vout)
+        BOOST_FOREACH(const CTxOut& txout, tx.Get_vout())
         {
             nCredit += GetCredit(txout);
             if (!MoneyRange(nCredit))
@@ -252,7 +252,7 @@ public:
     int64 GetChange(const CTransaction& tx) const
     {
         int64 nChange = 0;
-        BOOST_FOREACH(const CTxOut& txout, tx.vout)
+        BOOST_FOREACH(const CTxOut& txout, tx.Get_vout())
         {
             nChange += GetChange(txout);
             if (!MoneyRange(nChange))
@@ -478,7 +478,7 @@ public:
                 BOOST_FOREACH(char c, pthis->mapValue["spent"])
                     pthis->vfSpent.push_back(c != '0');
             else
-                pthis->vfSpent.assign(vout.size(), fSpent);
+                pthis->vfSpent.assign(Get_vout().size(), fSpent);
 
             ReadOrderPos(pthis->nOrderPos, pthis->mapValue);
 
@@ -529,9 +529,9 @@ public:
 
     void MarkSpent(unsigned int nOut)
     {
-        if (nOut >= vout.size())
+        if (nOut >= Get_vout().size())
             throw std::runtime_error("CWalletTx::MarkSpent() : nOut out of range");
-        vfSpent.resize(vout.size());
+        vfSpent.resize(Get_vout().size());
         if (!vfSpent[nOut])
         {
             vfSpent[nOut] = true;
@@ -541,9 +541,9 @@ public:
 
     void MarkUnspent(unsigned int nOut)
     {
-        if (nOut >= vout.size())
+        if (nOut >= Get_vout().size())
             throw std::runtime_error("CWalletTx::MarkUnspent() : nOut out of range");
-        vfSpent.resize(vout.size());
+        vfSpent.resize(Get_vout().size());
         if (vfSpent[nOut])
         {
             vfSpent[nOut] = false;
@@ -553,7 +553,7 @@ public:
 
     bool IsSpent(unsigned int nOut) const
     {
-        if (nOut >= vout.size())
+        if (nOut >= Get_vout().size())
             throw std::runtime_error("CWalletTx::IsSpent() : nOut out of range");
         if (nOut >= vfSpent.size())
             return false;
@@ -562,7 +562,7 @@ public:
 
     int64 GetDebit() const
     {
-        if (vin.empty())
+        if (Get_vin().empty())
             return 0;
         if (fDebitCached)
             return nDebitCached;
@@ -595,11 +595,11 @@ public:
             return nAvailableCreditCached;
 
         int64 nCredit = 0;
-        for (unsigned int i = 0; i < vout.size(); i++)
+        for (unsigned int i = 0; i < Get_vout().size(); i++)
         {
             if (!IsSpent(i))
             {
-                const CTxOut &txout = vout[i];
+                const CTxOut &txout = Get_vout()[i];
                 nCredit += pwallet->GetCredit(txout);
                 if (!MoneyRange(nCredit))
                     throw std::runtime_error("CWalletTx::GetAvailableCredit() : value out of range");
@@ -665,11 +665,11 @@ public:
                     mapPrev[tx.GetHash()] = &tx;
             }
 
-            BOOST_FOREACH(const CTxIn& txin, ptx->vin)
+            BOOST_FOREACH(const CTxIn& txin, ptx->Get_vin())
             {
-                if (!mapPrev.count(txin.prevout.hash))
+                if (!mapPrev.count(txin.Get_prevout().Get_hash()))
                     return false;
-                vWorkQueue.push_back(mapPrev[txin.prevout.hash]);
+                vWorkQueue.push_back(mapPrev[txin.Get_prevout().Get_hash()]);
             }
         }
         return true;
@@ -706,7 +706,7 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString().substr(0,10).c_str(), i, nDepth, FormatMoney(tx->vout[i].nValue).c_str());
+        return strprintf("COutput(%s, %d, %d) [%s]", tx->GetHash().ToString().substr(0,10).c_str(), i, nDepth, FormatMoney(tx->Get_vout()[i].Get_nValue()).c_str());
     }
 
     void print() const

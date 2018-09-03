@@ -148,11 +148,12 @@ bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 /** Position on disk for a particular transaction. */
 class CDiskTxPos
 {
-public:
+private:
     unsigned int nFile;
     unsigned int nBlockPos;
     unsigned int nTxPos;
 
+public:
     CDiskTxPos()
     {
         SetNull();
@@ -164,6 +165,10 @@ public:
         nBlockPos = nBlockPosIn;
         nTxPos = nTxPosIn;
     }
+
+    unsigned int Get_nFile() const { return nFile; }
+    unsigned int Get_nBlockPos() const { return nBlockPos; }
+    unsigned int Get_nTxPos() const { return nTxPos; }
 
     IMPLEMENT_SERIALIZE( READWRITE(FLATDATA(*this)); )
     void SetNull() { nFile = (unsigned int) -1; nBlockPos = 0; nTxPos = 0; }
@@ -201,12 +206,16 @@ public:
 /** An inpoint - a combination of a transaction and an index n into its vin */
 class CInPoint
 {
-public:
+private:
     CTransaction* ptx;
-    unsigned int n;
+    unsigned int n;     // XXX: This is not actually used in a meaningful way.
 
+public:
     CInPoint() { SetNull(); }
     CInPoint(CTransaction* ptxIn, unsigned int nIn) { ptx = ptxIn; n = nIn; }
+
+    CTransaction* Get_ptx() const { return ptx; }
+
     void SetNull() { ptx = NULL; n = (unsigned int) -1; }
     bool IsNull() const { return (ptx == NULL && n == (unsigned int) -1); }
 };
@@ -216,12 +225,17 @@ public:
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
 class COutPoint
 {
-public:
+private:
     uint256 hash;
     unsigned int n;
 
+public:
     COutPoint() { SetNull(); }
     COutPoint(uint256 hashIn, unsigned int nIn) { hash = hashIn; n = nIn; }
+
+    uint256 Get_hash() const { return hash; }
+    unsigned int Get_n() const { return n; }
+
     IMPLEMENT_SERIALIZE( READWRITE(FLATDATA(*this)); )
     void SetNull() { hash = 0; n = (unsigned int) -1; }
     bool IsNull() const { return (hash == 0 && n == (unsigned int) -1); }
@@ -261,11 +275,12 @@ public:
  */
 class CTxIn
 {
-public:
+private:
     COutPoint prevout;
     CScript scriptSig;
     unsigned int nSequence;
 
+public:
     CTxIn()
     {
         nSequence = std::numeric_limits<unsigned int>::max();
@@ -284,6 +299,15 @@ public:
         scriptSig = scriptSigIn;
         nSequence = nSequenceIn;
     }
+
+    const COutPoint& Get_prevout() const { return prevout; }
+    COutPoint& Get_prevout() { return prevout; }
+    unsigned int Get_nSequence() const { return nSequence; }
+    const CScript& Get_scriptSig() const { return scriptSig; }
+    CScript& Get_scriptSig() { return scriptSig; }
+
+    void Set_scriptSig(CScript scriptSigIn) { scriptSig = scriptSigIn; }
+    void Set_nSequence(unsigned int nSequenceIn) { nSequence = nSequenceIn; }
 
     IMPLEMENT_SERIALIZE
     (
@@ -311,7 +335,7 @@ public:
 
     std::string ToStringShort() const
     {
-        return strprintf(" %s %d", prevout.hash.ToString().c_str(), prevout.n);
+        return strprintf(" %s %d", prevout.Get_hash().ToString().c_str(), prevout.Get_n());
     }
 
     std::string ToString() const
@@ -343,10 +367,11 @@ public:
  */
 class CTxOut
 {
-public:
+private:
     int64 nValue;
     CScript scriptPubKey;
 
+public:
     CTxOut()
     {
         SetNull();
@@ -357,6 +382,12 @@ public:
         nValue = nValueIn;
         scriptPubKey = scriptPubKeyIn;
     }
+
+    int64 Get_nValue() const { return nValue; }
+    const CScript& Get_scriptPubKey() const { return scriptPubKey; }
+
+    void Set_nValue(int64 nValueIn) { nValue = nValueIn; }
+    void Set_scriptPubKey(CScript scriptPubKeyIn) { scriptPubKey = scriptPubKeyIn; }
 
     IMPLEMENT_SERIALIZE
     (
@@ -441,6 +472,7 @@ class CTransaction
 public:
     static const int CURRENT_VERSION=1;
 
+private:
     int nVersion;
     unsigned int nTime;
     std::vector<CTxIn> vin;
@@ -449,12 +481,27 @@ public:
 
     // Denial-of-service detection:
     mutable int nDoS;
+
+public:
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
     CTransaction()
     {
         SetNull();
     }
+
+    int Get_nVersion() const { return nVersion; }
+    unsigned int Get_nTime() const { return nTime; }
+    std::vector<CTxIn>& Get_vin() { return vin; }
+    const std::vector<CTxIn>& Get_vin() const { return vin; }
+    std::vector<CTxOut>& Get_vout() { return vout; }
+    const std::vector<CTxOut>& Get_vout() const { return vout; }
+    unsigned int Get_nLockTime() const { return nLockTime; }
+    int Get_nDoS() const { return nDoS; }
+
+    void Set_nTime(unsigned int nTimeIn) { nTime = nTimeIn; }
+    void Set_vin(std::vector<CTxIn> vinIn) { vin = vinIn; }
+    void Set_vout(std::vector<CTxOut> voutIn) { vout = voutIn; }
 
     IMPLEMENT_SERIALIZE
     (
@@ -508,24 +555,24 @@ public:
         if (vin.size() != old.vin.size())
             return false;
         for (unsigned int i = 0; i < vin.size(); i++)
-            if (vin[i].prevout != old.vin[i].prevout)
+            if (vin[i].Get_prevout() != old.vin[i].Get_prevout())
                 return false;
 
         bool fNewer = false;
         unsigned int nLowest = std::numeric_limits<unsigned int>::max();
         for (unsigned int i = 0; i < vin.size(); i++)
         {
-            if (vin[i].nSequence != old.vin[i].nSequence)
+            if (vin[i].Get_nSequence() != old.vin[i].Get_nSequence())
             {
-                if (vin[i].nSequence <= nLowest)
+                if (vin[i].Get_nSequence() <= nLowest)
                 {
                     fNewer = false;
-                    nLowest = vin[i].nSequence;
+                    nLowest = vin[i].Get_nSequence();
                 }
-                if (old.vin[i].nSequence < nLowest)
+                if (old.vin[i].Get_nSequence() < nLowest)
                 {
                     fNewer = true;
-                    nLowest = old.vin[i].nSequence;
+                    nLowest = old.vin[i].Get_nSequence();
                 }
             }
         }
@@ -534,13 +581,13 @@ public:
 
     bool IsCoinBase() const
     {
-        return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+        return (vin.size() == 1 && vin[0].Get_prevout().IsNull() && vout.size() >= 1);
     }
 
     bool IsCoinStake() const
     {
         // ppcoin: the coin stake transaction is marked with the first output empty
-        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+        return (vin.size() > 0 && (!vin[0].Get_prevout().IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
 	bool IsCoinBaseOrStake() const
@@ -583,8 +630,8 @@ public:
         int64 nValueOut = 0;
         BOOST_FOREACH(const CTxOut& txout, vout)
         {
-            nValueOut += txout.nValue;
-            if (!MoneyRange(txout.nValue) || !MoneyRange(nValueOut))
+            nValueOut += txout.Get_nValue();
+            if (!MoneyRange(txout.Get_nValue()) || !MoneyRange(nValueOut))
                 throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
         }
         return nValueOut;
@@ -611,12 +658,12 @@ public:
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
-        CAutoFile filein = CAutoFile(OpenBlockFile(pos.nFile, 0, pfileRet ? "rb+" : "rb"), SER_DISK, CLIENT_VERSION);
+        CAutoFile filein = CAutoFile(OpenBlockFile(pos.Get_nFile(), 0, pfileRet ? "rb+" : "rb"), SER_DISK, CLIENT_VERSION);
         if (!filein)
             return error("CTransaction::ReadFromDisk() : OpenBlockFile failed");
 
         // Read transaction
-        if (fseek(filein, pos.nTxPos, SEEK_SET) != 0)
+        if (fseek(filein, pos.Get_nTxPos(), SEEK_SET) != 0)
             return error("CTransaction::ReadFromDisk() : fseek failed");
 
         try {
@@ -629,7 +676,7 @@ public:
         // Return file pointer
         if (pfileRet)
         {
-            if (fseek(filein, pos.nTxPos, SEEK_SET) != 0)
+            if (fseek(filein, pos.Get_nTxPos(), SEEK_SET) != 0)
                 return error("CTransaction::ReadFromDisk() : second fseek failed");
             *pfileRet = filein.release();
         }
@@ -699,7 +746,7 @@ public:
      @return	Returns true if all inputs are in txdb or mapTestPool
      */
     bool FetchInputs(CTxDB& txdb, const std::map<uint256, CTxIndex>& mapTestPool,
-                     bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid);
+                     bool fBlock, bool fMiner, MapPrevTx& inputsRet, bool& fInvalid) const;
 
     /** Sanity check previous transactions, then, if all checks succeed,
         mark them as spent by this transaction.
@@ -732,7 +779,7 @@ protected:
 /** A transaction with a merkle branch linking it to the block chain. */
 class CMerkleTx : public CTransaction
 {
-public:
+private:
     uint256 hashBlock;
     std::vector<uint256> vMerkleBranch;
     int nIndex;
@@ -740,7 +787,7 @@ public:
     // memory only
     mutable bool fMerkleVerified;
 
-
+public:
     CMerkleTx()
     {
         Init();
@@ -750,6 +797,13 @@ public:
     {
         Init();
     }
+
+    uint256 Get_hashBlock() const { return hashBlock; }
+    const std::vector<uint256>& Get_vMerkleBranch() const { return vMerkleBranch; }
+    int Get_nIndex() const { return nIndex; }
+
+    void Set_nIndex(int nIndexIn) { nIndex = nIndexIn; }
+    void Set_vMerkleBranch(std::vector<uint256> vMerkleBranchIn) { vMerkleBranch = vMerkleBranchIn; }
 
     void Init()
     {
@@ -762,7 +816,7 @@ public:
     IMPLEMENT_SERIALIZE
     (
         nSerSize += SerReadWrite(s, *(CTransaction*)this, nType, nVersion, ser_action);
-        nVersion = this->nVersion;
+        nVersion = this->Get_nVersion();
         READWRITE(hashBlock);
         READWRITE(vMerkleBranch);
         READWRITE(nIndex);
@@ -787,10 +841,11 @@ public:
  */
 class CTxIndex
 {
-public:
+private:
     CDiskTxPos pos;
     std::vector<CDiskTxPos> vSpent;
 
+public:
     CTxIndex()
     {
         SetNull();
@@ -801,6 +856,10 @@ public:
         pos = posIn;
         vSpent.resize(nOutputs);
     }
+
+    CDiskTxPos& Get_pos() { return pos; }
+    std::vector<CDiskTxPos>& Get_vSpent() { return vSpent; }
+    const std::vector<CDiskTxPos>& Get_vSpent() const { return vSpent; }
 
     IMPLEMENT_SERIALIZE
     (
@@ -816,7 +875,7 @@ public:
         vSpent.clear();
     }
 
-    bool IsNull()
+    bool IsNull() const
     {
         return pos.IsNull();
     }
@@ -854,6 +913,8 @@ class CBlockHeader
 public:
     // header
     static const int CURRENT_VERSION=4;
+
+private:
     int nVersion;
     uint256 hashPrevBlock;
     uint256 hashMerkleRoot;
@@ -861,10 +922,24 @@ public:
     unsigned int nBits;
     unsigned int nNonce;
 
+public:
     CBlockHeader()
     {
         SetNull();
     }
+
+    int Get_nVersion() const { return nVersion; }
+    uint256 Get_hashPrevBlock() const { return hashPrevBlock; }
+    uint256 Get_hashMerkleRoot() const { return hashMerkleRoot; }
+    unsigned int Get_nBits() const { return nBits; }
+    unsigned int Get_nNonce() const { return nNonce; }
+
+    void Set_nVersion(unsigned int nVersionIn) { nVersion = nVersionIn; }
+    void Set_hashPrevBlock(uint256 hashPrevBlockIn) { hashPrevBlock = hashPrevBlockIn; }
+    void Set_hashMerkleRoot(uint256 hashMerkleRootIn) { hashMerkleRoot = hashMerkleRootIn; }
+    void Set_nTime(unsigned int nTimeIn) { nTime = nTimeIn; }
+    void Set_nBits(unsigned int nBitsIn) { nBits = nBitsIn; }
+    void Set_nNonce(unsigned int nNonceIn) { nNonce = nNonceIn; }
 
     IMPLEMENT_SERIALIZE
     (
@@ -915,7 +990,7 @@ public:
 
 class CBlock : public CBlockHeader
 {
-public:
+private:
     // network and disk
     std::vector<CTransaction> vtx;
 
@@ -927,6 +1002,8 @@ public:
 
     // Denial-of-service detection:
     mutable int nDoS;
+
+public:
     bool DoS(int nDoSIn, bool fIn) const { nDoS += nDoSIn; return fIn; }
 
     CBlock()
@@ -939,6 +1016,13 @@ public:
         SetNull();
         *((CBlockHeader*)this) = header;
     }
+
+    const std::vector<CTransaction>& Get_vtx() const { return vtx; }
+    std::vector<CTransaction>& Get_vtx() { return vtx; }
+    const std::vector<unsigned char>& Get_vchBlockSig() const { return vchBlockSig; }
+    int Get_nDoS() const { return nDoS; }
+
+    void Set_vtx(std::vector<CTransaction> vtxIn) { vtx = vtxIn; }
 
     IMPLEMENT_SERIALIZE
     (
@@ -979,7 +1063,7 @@ public:
 
     std::pair<COutPoint, unsigned int> GetProofOfStake() const
     {
-        return IsProofOfStake()? std::make_pair(vtx[1].vin[0].prevout, vtx[1].nTime) : std::make_pair(COutPoint(), (unsigned int)0);
+        return IsProofOfStake()? std::make_pair(vtx[1].Get_vin()[0].Get_prevout(), vtx[1].Get_nTime()) : std::make_pair(COutPoint(), (unsigned int)0);
     }
 
     // ppcoin: get max transaction timestamp
@@ -987,7 +1071,7 @@ public:
     {
         int64 maxTransactionTime = 0;
         BOOST_FOREACH(const CTransaction& tx, vtx)
-            maxTransactionTime = std::max(maxTransactionTime, (int64)tx.nTime);
+            maxTransactionTime = std::max(maxTransactionTime, (int64)tx.Get_nTime());
         return maxTransactionTime;
     }
 
@@ -1076,7 +1160,7 @@ public:
         CAutoFile filein = CAutoFile(OpenBlockFile(nFile, nBlockPos, "rb"), SER_DISK, CLIENT_VERSION);
         if (!filein)
             return error("CBlock::ReadFromDisk() : OpenBlockFile failed");
-        
+
         // Read block
         try {
             filein >> *this;
@@ -1086,7 +1170,7 @@ public:
         }
 
         // Check the header
-        if (IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits))
+        if (IsProofOfWork() && !CheckProofOfWork(GetHash(), Get_nBits()))
             return error("CBlock::ReadFromDisk() : errors in block header");
 
         return true;
@@ -1096,12 +1180,12 @@ public:
 
     void print() const
     {
-        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%" PRIszu ", vchBlockSig=%s)\n",
+        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%llu, nBits=%08x, nNonce=%u, vtx=%" PRIszu ", vchBlockSig=%s)\n",
             GetHash().ToString().c_str(),
-            nVersion,
-            hashPrevBlock.ToString().c_str(),
-            hashMerkleRoot.ToString().c_str(),
-            nTime, nBits, nNonce,
+            Get_nVersion(),
+            Get_hashPrevBlock().ToString().c_str(),
+            Get_hashMerkleRoot().ToString().c_str(),
+            GetBlockTime(), Get_nBits(), Get_nNonce(),
             vtx.size(),
             HexStr(vchBlockSig.begin(), vchBlockSig.end()).c_str());
         for (unsigned int i = 0; i < vtx.size(); i++)
@@ -1145,20 +1229,26 @@ private:
  */
 class CBlockIndex
 {
-public:
+private:
     const uint256* phashBlock;
     CBlockIndex* pprev;
     CBlockIndex* pnext;
+
+protected:
     unsigned int nFile;
     unsigned int nBlockPos;
+
+private:
     uint256 nChainTrust; // ppcoin: trust score of block chain
+
+protected:
     int nHeight;
 
     int64 nMint;
     int64 nMoneySupply;
 
     unsigned int nFlags;  // ppcoin: block index flags
-    enum  
+    enum
     {
         BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
         BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
@@ -1166,7 +1256,7 @@ public:
     };
 
     uint64 nStakeModifier; // hash modifier for proof-of-stake
-    unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
+    unsigned int nStakeModifierChecksum; // checksum of index; in-memory only
 
     // proof-of-stake specific fields
     COutPoint prevoutStake;
@@ -1180,6 +1270,7 @@ public:
     unsigned int nBits;
     unsigned int nNonce;
 
+public:
     CBlockIndex()
     {
         phashBlock = NULL;
@@ -1223,8 +1314,8 @@ public:
         if (block.IsProofOfStake())
         {
             SetProofOfStake();
-            prevoutStake = block.vtx[1].vin[0].prevout;
-            nStakeTime = block.vtx[1].nTime;
+            prevoutStake = block.Get_vtx()[1].Get_vin()[0].Get_prevout();
+            nStakeTime = block.Get_vtx()[1].Get_nTime();
         }
         else
         {
@@ -1232,25 +1323,74 @@ public:
             nStakeTime = 0;
         }
 
-        nVersion       = block.nVersion;
-        hashMerkleRoot = block.hashMerkleRoot;
-        nTime          = block.nTime;
-        nBits          = block.nBits;
-        nNonce         = block.nNonce;
+        nVersion       = block.Get_nVersion();
+        hashMerkleRoot = block.Get_hashMerkleRoot();
+        nTime          = block.GetBlockTime();
+        nBits          = block.Get_nBits();
+        nNonce         = block.Get_nNonce();
     }
 
     CBlockHeader GetBlockHeader() const
     {
         CBlockHeader block;
-        block.nVersion       = nVersion;
-        if (pprev)
-            block.hashPrevBlock = pprev->GetBlockHash();
-        block.hashMerkleRoot = hashMerkleRoot;
-        block.nTime          = nTime;
-        block.nBits          = nBits;
-        block.nNonce         = nNonce;
+        block.Set_nVersion(nVersion);
+        if (pprev) {
+            block.Set_hashPrevBlock(pprev->GetBlockHash());
+        }
+        block.Set_hashMerkleRoot(hashMerkleRoot);
+        block.Set_nTime(nTime);
+        block.Set_nBits(nBits);
+        block.Set_nNonce(nNonce);
         return block;
     }
+
+
+    const uint256* Get_phashBlock() const { return phashBlock; }
+    CBlockIndex* Get_pprev() const { return pprev; }
+    CBlockIndex* Get_pnext() const { return pnext; }
+    unsigned int Get_nFile() const { return nFile; }
+    unsigned int Get_nBlockPos() const { return nBlockPos; }
+    uint256 Get_nChainTrust() const { return nChainTrust; }
+    int Get_nHeight() const { return nHeight; }
+
+    int64 Get_nMint() const { return nMint; }
+    int64 Get_nMoneySupply() const { return nMoneySupply; }
+    unsigned int Get_nFlags() const { return nFlags; }
+    uint64 Get_nStakeModifier() const { return nStakeModifier; }
+    unsigned int Get_nStakeModifierChecksum() const { return nStakeModifierChecksum; }
+
+    COutPoint& Get_prevoutStake() { return prevoutStake; }
+    unsigned int Get_nStakeTime() const { return nStakeTime; }
+    uint256 Get_hashProofOfStake() const { return hashProofOfStake; }
+
+    int Get_nVersion() const { return nVersion; }
+    uint256 Get_hashMerkleRoot() const { return hashMerkleRoot; }
+    unsigned int Get_nBits() const { return nBits; }
+    unsigned int Get_nNonce() const { return nNonce; }
+
+    void Set_phashBlock(const uint256* phashBlockIn) { phashBlock = phashBlockIn; }
+    void Set_pprev(CBlockIndex* pprevIn) { pprev = pprevIn; }
+    void Set_pnext(CBlockIndex* pnextIn) { pnext = pnextIn; }
+    void Set_nFile(unsigned int nFileIn) { nFile = nFileIn; }
+    void Set_nBlockPos(unsigned int nBlockPosIn) { nBlockPos = nBlockPosIn; }
+    void Set_nChainTrust(const uint256 nChainTrustIn) { nChainTrust = nChainTrustIn; }
+    void Set_nHeight(int nHeightIn) { nHeight = nHeightIn; }
+    void Set_nMint(int64 nMintIn) { nMint = nMintIn; }
+    void Set_nMoneySupply(int64 nMoneySupplyIn) { nMoneySupply = nMoneySupplyIn; }
+    void Set_nFlags(unsigned int nFlagsIn) { nFlags = nFlagsIn; }
+    void Set_nStakeModifier(uint64 nStakeModifierIn) { nStakeModifier = nStakeModifierIn; }
+    void Set_nStakeModifierChecksum(unsigned int nStakeModifierChecksumIn)
+    {
+        nStakeModifierChecksum = nStakeModifierChecksumIn;
+    }
+    void Set_prevoutStake(COutPoint prevoutStakeIn) { prevoutStake = prevoutStakeIn; }
+    void Set_nStakeTime(unsigned int nStakeTimeIn) { nStakeTime = nStakeTimeIn; }
+    void Set_hashProofOfStake(uint256 hashProofOfStakeIn) { hashProofOfStake = hashProofOfStakeIn; }
+    void Set_nVersion(int nVersionIn) { nVersion = nVersionIn; }
+    void Set_hashMerkleRoot(uint256 hashMerkleRootIn) { hashMerkleRoot = hashMerkleRootIn; }
+    void Set_nTime(unsigned int nTimeIn) { nTime = nTimeIn; }
+    void Set_nBits(unsigned int nBitsIn) { nBits = nBitsIn; }
+    void Set_nNonce(unsigned int nNonceIn) { nNonce = nNonceIn; }
 
     uint256 GetBlockHash() const
     {
@@ -1356,7 +1496,7 @@ public:
             pprev, pnext, nFile, nBlockPos, nHeight,
             FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
             GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
-            nStakeModifier, nStakeModifierChecksum, 
+            nStakeModifier, nStakeModifierChecksum,
             hashProofOfStake.ToString().c_str(),
             prevoutStake.ToString().c_str(), nStakeTime,
             hashMerkleRoot.ToString().c_str(),
@@ -1377,10 +1517,10 @@ class CDiskBlockIndex : public CBlockIndex
 private:
 	uint256 blockHash;
 	
-public:
     uint256 hashPrev;
     uint256 hashNext;
 
+public:
     CDiskBlockIndex()
     {
         hashPrev = 0;
@@ -1390,14 +1530,20 @@ public:
 
     explicit CDiskBlockIndex(CBlockIndex* pindex) : CBlockIndex(*pindex)
     {
-        hashPrev = (pprev ? pprev->GetBlockHash() : 0);
-        hashNext = (pnext ? pnext->GetBlockHash() : 0);
+        hashPrev = (Get_pprev() ? Get_pprev()->GetBlockHash() : 0);
+        hashNext = (Get_pnext() ? Get_pnext()->GetBlockHash() : 0);
     }
+
+    uint256 Get_hashPrev() const { return hashPrev; }
+    uint256 Get_hashNext() const { return hashNext; }
+
+    void Set_hashNext(uint256 hashNextIn) { hashNext = hashNextIn; }
 
     IMPLEMENT_SERIALIZE
     (
-        if (!(nType & SER_GETHASH))
+        if (!(nType & SER_GETHASH)) {
             READWRITE(nVersion);
+        }
 
         READWRITE(hashNext);
         READWRITE(nFile);
@@ -1415,13 +1561,13 @@ public:
         }
         else if (fRead)
         {
-            const_cast<CDiskBlockIndex*>(this)->prevoutStake.SetNull();
-            const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
-            const_cast<CDiskBlockIndex*>(this)->hashProofOfStake = 0;
+            const_cast<CDiskBlockIndex*>(this)->Get_prevoutStake().SetNull();
+            const_cast<CDiskBlockIndex*>(this)->Set_nStakeTime(0);
+            const_cast<CDiskBlockIndex*>(this)->Set_hashProofOfStake(0);
         }
 
         // block header
-        READWRITE(this->nVersion);
+        READWRITE(nVersion);
         READWRITE(hashPrev);
         READWRITE(hashMerkleRoot);
         READWRITE(nTime);
@@ -1432,17 +1578,17 @@ public:
 
     uint256 GetBlockHash() const
     {
-		if (fUseFastIndex && (nTime < GetAdjustedTime() - 12 * GetClockDrift(GetAdjustedTime())) && blockHash != 0)
+		if (fUseFastIndex && (GetBlockTime() < GetAdjustedTime() - 12 * GetClockDrift(GetAdjustedTime())) && blockHash != 0)
 			return blockHash;
 			
         CBlock block;
-        block.nVersion        = nVersion;
-        block.hashPrevBlock   = hashPrev;
-        block.hashMerkleRoot  = hashMerkleRoot;
-        block.nTime           = nTime;
-        block.nBits           = nBits;
-        block.nNonce          = nNonce;
-    
+        block.Set_nVersion(Get_nVersion());
+        block.Set_hashPrevBlock(hashPrev);
+        block.Set_hashMerkleRoot(Get_hashMerkleRoot());
+        block.Set_nTime(GetBlockTime());
+        block.Set_nBits(Get_nBits());
+        block.Set_nNonce(Get_nNonce());
+
 		const_cast<CDiskBlockIndex*>(this)->blockHash = block.GetHash();
 		
 		return blockHash;
@@ -1478,10 +1624,10 @@ public:
  */
 class CBlockLocator
 {
-protected:
+private:
     std::vector<uint256> vHave;
-public:
 
+public:
     CBlockLocator()
     {
     }
@@ -1530,7 +1676,7 @@ public:
 
             // Exponentially larger steps back
             for (int i = 0; pindex && i < nStep; i++)
-                pindex = pindex->pprev;
+                pindex = pindex->Get_pprev();
             if (vHave.size() > 10)
                 nStep *= 2;
         }
@@ -1595,7 +1741,7 @@ public:
         CBlockIndex* pindex = GetBlockIndex();
         if (!pindex)
             return 0;
-        return pindex->nHeight;
+        return pindex->Get_nHeight();
     }
 };
 
@@ -1609,9 +1755,17 @@ public:
 class CTxMemPool
 {
 public:
+    // XXX: Probably we should make CTxMemPool a sub-class of
+    //      CCriticalSection, and lock access to instances
+    //      that way, instead of using this member function.
     mutable CCriticalSection cs;
+
+private:
     std::map<uint256, CTransaction> mapTx;
     std::map<COutPoint, CInPoint> mapNextTx;
+
+public:
+    std::map<uint256, CTransaction>& Get_mapTx() { return mapTx; }
 
     bool accept(CTxDB& txdb, CTransaction &tx,
                 bool fCheckInputs, bool* pfMissingInputs);

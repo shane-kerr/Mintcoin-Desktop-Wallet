@@ -91,16 +91,18 @@ Value GetNetworkHashPS(int lookup) {
         return 0;
 
     // If lookup is -1, then use blocks since last difficulty change.
-    if (lookup <= 0)
-        lookup = pindexBest->nHeight % 2016 + 1;
+    if (lookup <= 0) {
+        lookup = pindexBest->Get_nHeight() % 2016 + 1;
+    }
 
     // If lookup is larger than chain, then set it to chain length.
-    if (lookup > pindexBest->nHeight)
-        lookup = pindexBest->nHeight;
+    if (lookup > pindexBest->Get_nHeight()) {
+        lookup = pindexBest->Get_nHeight();
+    }
 
     CBlockIndex* pindexPrev = pindexBest;
     for (int i = 0; i < lookup; i++)
-        pindexPrev = pindexPrev->pprev;
+        pindexPrev = pindexPrev->Get_pprev();
 
     double timeDiff = pindexBest->GetBlockTime() - pindexPrev->GetBlockTime();
     double timePerBlock = timeDiff / lookup;
@@ -169,15 +171,15 @@ Value getworkex(const Array& params, bool fHelp)
         }
 
         // Update nTime
-        pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime());
-        pblock->nNonce = 0;
+        pblock->Set_nTime(max(pindexPrev->GetMedianTimePast()+1, GetAdjustedTime()));
+        pblock->Set_nNonce(0);
 
         // Update nExtraNonce
         static unsigned int nExtraNonce = 0;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
         // Save
-        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
+        mapNewBlock[pblock->Get_hashMerkleRoot()] = make_pair(pblock, pblock->Get_vtx()[0].Get_vin()[0].Get_scriptSig());
 
         // Prebuild hash buffers
         char pmidstate[32];
@@ -185,9 +187,9 @@ Value getworkex(const Array& params, bool fHelp)
         char phash1[64];
         FormatHashBuffers(pblock, pmidstate, pdata, phash1);
 
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+        uint256 hashTarget = CBigNum().SetCompact(pblock->Get_nBits()).getuint256();
 
-        CTransaction coinbaseTx = pblock->vtx[0];
+        CTransaction coinbaseTx = pblock->Get_vtx()[0];
         std::vector<uint256> merkle = pblock->GetMerkleBranch(0);
 
         Object result;
@@ -228,19 +230,19 @@ Value getworkex(const Array& params, bool fHelp)
             ((unsigned int*)pdata)[i] = ByteReverse(((unsigned int*)pdata)[i]);
 
         // Get saved block
-        if (!mapNewBlock.count(pdata->hashMerkleRoot))
+        if (!mapNewBlock.count(pdata->Get_hashMerkleRoot()))
             return false;
-        CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
+        CBlock* pblock = mapNewBlock[pdata->Get_hashMerkleRoot()].first;
 
-        pblock->nTime = pdata->nTime;
-        pblock->nNonce = pdata->nNonce;
+        pblock->Set_nTime(pdata->GetBlockTime());
+        pblock->Set_nNonce(pdata->Get_nNonce());
 
         if(coinbase.size() == 0)
-            pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
+            pblock->Get_vtx()[0].Get_vin()[0].Set_scriptSig(mapNewBlock[pdata->Get_hashMerkleRoot()].second);
         else
-            CDataStream(coinbase, SER_NETWORK, PROTOCOL_VERSION) >> pblock->vtx[0]; // FIXME - HACK!
+            CDataStream(coinbase, SER_NETWORK, PROTOCOL_VERSION) >> pblock->Get_vtx()[0]; // FIXME - HACK!
 
-        pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+        pblock->Set_hashMerkleRoot(pblock->BuildMerkleTree());
 
         if (!pblock->SignBlock(*pwalletMain))
             throw JSONRPCError(-100, "Unable to sign block, wallet locked?");
@@ -312,14 +314,14 @@ Value getwork(const Array& params, bool fHelp)
 
         // Update nTime
         pblock->UpdateTime(pindexPrev);
-        pblock->nNonce = 0;
+        pblock->Set_nNonce(0);
 
         // Update nExtraNonce
         static unsigned int nExtraNonce = 0;
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
         // Save
-        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
+        mapNewBlock[pblock->Get_hashMerkleRoot()] = make_pair(pblock, pblock->Get_vtx()[0].Get_vin()[0].Get_scriptSig());
 
         // Pre-build hash buffers
         char pmidstate[32];
@@ -327,7 +329,7 @@ Value getwork(const Array& params, bool fHelp)
         char phash1[64];
         FormatHashBuffers(pblock, pmidstate, pdata, phash1);
 
-        uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+        uint256 hashTarget = CBigNum().SetCompact(pblock->Get_nBits()).getuint256();
 
         Object result;
         result.push_back(Pair("midstate", HexStr(BEGIN(pmidstate), END(pmidstate)))); // deprecated
@@ -349,14 +351,14 @@ Value getwork(const Array& params, bool fHelp)
             ((unsigned int*)pdata)[i] = ByteReverse(((unsigned int*)pdata)[i]);
 
         // Get saved block
-        if (!mapNewBlock.count(pdata->hashMerkleRoot))
+        if (!mapNewBlock.count(pdata->Get_hashMerkleRoot()))
             return false;
-        CBlock* pblock = mapNewBlock[pdata->hashMerkleRoot].first;
+        CBlock* pblock = mapNewBlock[pdata->Get_hashMerkleRoot()].first;
 
-        pblock->nTime = pdata->nTime;
-        pblock->nNonce = pdata->nNonce;
-        pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
-        pblock->hashMerkleRoot = pblock->BuildMerkleTree();
+        pblock->Set_nTime(pdata->GetBlockTime());
+        pblock->Set_nNonce(pdata->Get_nNonce());
+        pblock->Get_vtx()[0].Get_vin()[0].Set_scriptSig(mapNewBlock[pdata->Get_hashMerkleRoot()].second);
+        pblock->Set_hashMerkleRoot(pblock->BuildMerkleTree());
 
         if (!pblock->SignBlock(*pwalletMain))
             throw JSONRPCError(-100, "Unable to sign block, wallet locked?");
@@ -446,13 +448,13 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     // Update nTime
     pblock->UpdateTime(pindexPrev);
-    pblock->nNonce = 0;
+    pblock->Set_nNonce(0);
 
     Array transactions;
     map<uint256, int64_t> setTxIndex;
     int i = 0;
     CTxDB txdb("r");
-    BOOST_FOREACH (CTransaction& tx, pblock->vtx)
+    BOOST_FOREACH (const CTransaction& tx, pblock->Get_vtx())
     {
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
@@ -494,7 +496,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
     Object aux;
     aux.push_back(Pair("flags", HexStr(COINBASE_FLAGS.begin(), COINBASE_FLAGS.end())));
 
-    uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+    uint256 hashTarget = CBigNum().SetCompact(pblock->Get_nBits()).getuint256();
 
     static Array aMutable;
     if (aMutable.empty())
@@ -505,20 +507,20 @@ Value getblocktemplate(const Array& params, bool fHelp)
     }
 
     Object result;
-    result.push_back(Pair("version", pblock->nVersion));
-    result.push_back(Pair("previousblockhash", pblock->hashPrevBlock.GetHex()));
+    result.push_back(Pair("version", pblock->Get_nVersion()));
+    result.push_back(Pair("previousblockhash", pblock->Get_hashPrevBlock().GetHex()));
     result.push_back(Pair("transactions", transactions));
     result.push_back(Pair("coinbaseaux", aux));
-    result.push_back(Pair("coinbasevalue", (int64_t)pblock->vtx[0].vout[0].nValue));
+    result.push_back(Pair("coinbasevalue", (int64_t)pblock->Get_vtx()[0].Get_vout()[0].Get_nValue()));
     result.push_back(Pair("target", hashTarget.GetHex()));
     result.push_back(Pair("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1));
     result.push_back(Pair("mutable", aMutable));
     result.push_back(Pair("noncerange", "00000000ffffffff"));
     result.push_back(Pair("sigoplimit", (int64_t)MAX_BLOCK_SIGOPS));
     result.push_back(Pair("sizelimit", (int64_t)MAX_BLOCK_SIZE));
-    result.push_back(Pair("curtime", (int64_t)pblock->nTime));
-    result.push_back(Pair("bits", HexBits(pblock->nBits)));
-    result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
+    result.push_back(Pair("curtime", (int64_t)pblock->GetBlockTime()));
+    result.push_back(Pair("bits", HexBits(pblock->Get_nBits())));
+    result.push_back(Pair("height", (int64_t)(pindexPrev->Get_nHeight()+1)));
 
     return result;
 }

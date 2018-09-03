@@ -88,7 +88,7 @@ public:
                     {
                       BOOST_FOREACH(const COutput& out, coins.second)
                       {
-                          amount += out.tx->vout[out.i].nValue;
+                          amount += out.tx->Get_vout()[out.i].Get_nValue();
                       }
                     }
                 }

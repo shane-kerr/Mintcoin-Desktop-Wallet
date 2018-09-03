@@ -95,34 +95,34 @@ bool CBloomFilter::IsTransactionRelevantToFilter(const CTransaction& tx) const
     if (contains(tx.GetHash()))
         return true;
 
-    BOOST_FOREACH(const CTxOut& txout, tx.vout)
+    BOOST_FOREACH(const CTxOut& txout, tx.Get_vout())
     {
         // Match if the filter contains any arbitrary script data element in any scriptPubKey in tx
-        CScript::const_iterator pc = txout.scriptPubKey.begin();
+        CScript::const_iterator pc = txout.Get_scriptPubKey().begin();
         vector<unsigned char> data;
-        while (pc < txout.scriptPubKey.end())
+        while (pc < txout.Get_scriptPubKey().end())
         {
             opcodetype opcode;
-            if (!txout.scriptPubKey.GetOp(pc, opcode, data))
+            if (!txout.Get_scriptPubKey().GetOp(pc, opcode, data))
                 break;
             if (data.size() != 0 && contains(data))
                 return true;
         }
     }
 
-    BOOST_FOREACH(const CTxIn& txin, tx.vin)
+    BOOST_FOREACH(const CTxIn& txin, tx.Get_vin())
     {
         // Match if the filter contains an outpoint tx spends
-        if (contains(txin.prevout))
+        if (contains(txin.Get_prevout()))
             return true;
 
         // Match if the filter contains any arbitrary script data element in any scriptSig in tx
-        CScript::const_iterator pc = txin.scriptSig.begin();
+        CScript::const_iterator pc = txin.Get_scriptSig().begin();
         vector<unsigned char> data;
-        while (pc < txin.scriptSig.end())
+        while (pc < txin.Get_scriptSig().end())
         {
             opcodetype opcode;
-            if (!txin.scriptSig.GetOp(pc, opcode, data))
+            if (!txin.Get_scriptSig().GetOp(pc, opcode, data))
                 break;
             if (data.size() != 0 && contains(data))
                 return true;
