@@ -321,8 +321,8 @@ bool CTxDB::LoadBlockIndex()
 
         // Construct block index object
         CBlockIndex* pindexNew    = InsertBlockIndex(diskindex.GetBlockHash());
-        pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
-        pindexNew->pnext          = InsertBlockIndex(diskindex.hashNext);
+        pindexNew->pprev          = InsertBlockIndex(diskindex.getHashPrev());
+        pindexNew->pnext          = InsertBlockIndex(diskindex.getHashNext());
         pindexNew->nFile          = diskindex.nFile;
         pindexNew->nBlockPos      = diskindex.nBlockPos;
         pindexNew->nHeight        = diskindex.nHeight;

@@ -1376,11 +1376,10 @@ class CDiskBlockIndex : public CBlockIndex
 {
 private:
 	uint256 blockHash;
-	
-public:
     uint256 hashPrev;
     uint256 hashNext;
 
+public:
     CDiskBlockIndex()
     {
         hashPrev = 0;
@@ -1393,6 +1392,10 @@ public:
         hashPrev = (pprev ? pprev->GetBlockHash() : 0);
         hashNext = (pnext ? pnext->GetBlockHash() : 0);
     }
+
+    const uint256& getHashPrev() { return hashPrev; }
+    const uint256& getHashNext() { return hashNext; }
+    void setHashNext(const uint256& newHashNext) { hashNext = newHashNext; }
 
     IMPLEMENT_SERIALIZE
     (
