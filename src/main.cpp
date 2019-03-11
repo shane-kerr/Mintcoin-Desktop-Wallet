@@ -415,7 +415,7 @@ int CMerkleTx::SetMerkleBranch(const CBlock* pblock)
             CTxIndex txindex;
             if (!CTxDB("r").ReadTxIndex(GetHash(), txindex))
                 return 0;
-            if (!blockTmp.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos))
+            if (!blockTmp.ReadFromDisk(txindex.pos.get_nFile(), txindex.pos.get_nBlockPos()))
                 return 0;
             pblock = &blockTmp;
         }
@@ -835,7 +835,7 @@ int CTxIndex::GetDepthInMainChain() const
 {
     // Read block header
     CBlock block;
-    if (!block.ReadFromDisk(pos.nFile, pos.nBlockPos))
+    if (!block.ReadFromDisk(pos.get_nFile(), pos.get_nBlockPos()))
         return 0;
     // Find the block in the index
     map<uint256, CBlockIndex*>::iterator mi = mapBlockIndex.find(block.GetHash());
@@ -865,7 +865,7 @@ bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock)
         if (tx.ReadFromDisk(txdb, COutPoint(hash, 0), txindex))
         {
             CBlock block;
-            if (block.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos))
+            if (block.ReadFromDisk(txindex.pos.get_nFile(), txindex.pos.get_nBlockPos()))
                 hashBlock = block.GetHash();
             return true;
         }
@@ -1366,7 +1366,7 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
             // If prev is coinbase or coinstake, check that it's matured
             if (txPrev.IsCoinBase() || txPrev.IsCoinStake())
                 for (const CBlockIndex* pindex = pindexBlock; pindex && pindexBlock->nHeight - pindex->nHeight < nMinConfirmations; pindex = pindex->pprev)
-                    if (pindex->nBlockPos == txindex.pos.nBlockPos && pindex->nFile == txindex.pos.nFile)
+                    if (pindex->nBlockPos == txindex.pos.get_nBlockPos() && pindex->nFile == txindex.pos.get_nFile())
                         return error("ConnectInputs() : tried to spend %s at depth %d", txPrev.IsCoinBase() ? "coinbase" : "coinstake", pindexBlock->nHeight - pindex->nHeight);
 
             // ppcoin: check transaction timestamp
@@ -1922,7 +1922,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const
 
         // Read block header
         CBlock block;
-        if (!block.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos))
+        if (!block.ReadFromDisk(txindex.pos.get_nFile(), txindex.pos.get_nBlockPos()))
             return false; // unable to read block of previous transaction
         if (block.GetBlockTime() + nStakeMinAge > nTime)
             continue; // only count coins meeting min age requirement

@@ -148,11 +148,12 @@ bool GetWalletFile(CWallet* pwallet, std::string &strWalletFileOut);
 /** Position on disk for a particular transaction. */
 class CDiskTxPos
 {
-public:
+private:
     unsigned int nFile;
     unsigned int nBlockPos;
     unsigned int nTxPos;
 
+public:
     CDiskTxPos()
     {
         SetNull();
@@ -164,6 +165,10 @@ public:
         nBlockPos = nBlockPosIn;
         nTxPos = nTxPosIn;
     }
+
+    unsigned int get_nFile() const { return nFile; }
+    unsigned int get_nBlockPos() const { return nBlockPos; }
+    unsigned int get_nTxPos() const { return nTxPos; }
 
     IMPLEMENT_SERIALIZE( READWRITE(FLATDATA(*this)); )
     void SetNull() { nFile = (unsigned int) -1; nBlockPos = 0; nTxPos = 0; }
@@ -611,12 +616,12 @@ public:
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
-        CAutoFile filein = CAutoFile(OpenBlockFile(pos.nFile, 0, pfileRet ? "rb+" : "rb"), SER_DISK, CLIENT_VERSION);
+        CAutoFile filein = CAutoFile(OpenBlockFile(pos.get_nFile(), 0, pfileRet ? "rb+" : "rb"), SER_DISK, CLIENT_VERSION);
         if (!filein)
             return error("CTransaction::ReadFromDisk() : OpenBlockFile failed");
 
         // Read transaction
-        if (fseek(filein, pos.nTxPos, SEEK_SET) != 0)
+        if (fseek(filein, pos.get_nTxPos(), SEEK_SET) != 0)
             return error("CTransaction::ReadFromDisk() : fseek failed");
 
         try {
@@ -629,7 +634,7 @@ public:
         // Return file pointer
         if (pfileRet)
         {
-            if (fseek(filein, pos.nTxPos, SEEK_SET) != 0)
+            if (fseek(filein, pos.get_nTxPos(), SEEK_SET) != 0)
                 return error("CTransaction::ReadFromDisk() : second fseek failed");
             *pfileRet = filein.release();
         }
