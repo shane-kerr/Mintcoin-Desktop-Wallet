@@ -1478,7 +1478,7 @@ public:
  */
 class CBlockLocator
 {
-protected:
+private:
     std::vector<uint256> vHave;
 public:
 
