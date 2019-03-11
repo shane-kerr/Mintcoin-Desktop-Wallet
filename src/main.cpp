@@ -576,7 +576,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
             return false;
 
     // Check for conflicts with in-memory transactions
-    CTransaction* ptxOld = NULL;
+    const CTransaction* ptxOld = NULL;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         COutPoint outpoint = tx.vin[i].prevout;
@@ -588,7 +588,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
             // Allow replacing with a newer version of the same transaction
             if (i != 0)
                 return false;
-            ptxOld = mapNextTx[outpoint].ptx;
+            ptxOld = mapNextTx[outpoint].get_ptx();
             if (ptxOld->IsFinal())
                 return false;
             if (!tx.IsNewerThan(*ptxOld))
@@ -596,7 +596,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
             for (unsigned int i = 0; i < tx.vin.size(); i++)
             {
                 COutPoint outpoint = tx.vin[i].prevout;
-                if (!mapNextTx.count(outpoint) || mapNextTx[outpoint].ptx != ptxOld)
+                if (!mapNextTx.count(outpoint) || mapNextTx[outpoint].get_ptx() != ptxOld)
                     return false;
             }
             break;
@@ -709,7 +709,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, CTransaction &tx)
 }
 
 
-bool CTxMemPool::remove(CTransaction &tx)
+bool CTxMemPool::remove(const CTransaction &tx)
 {
     // Remove transaction from memory pool
     {

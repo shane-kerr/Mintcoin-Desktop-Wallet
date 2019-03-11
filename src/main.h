@@ -206,14 +206,16 @@ public:
 /** An inpoint - a combination of a transaction and an index n into its vin */
 class CInPoint
 {
-public:
-    CTransaction* ptx;
+private:
+    CTransaction const* ptx;
     unsigned int n;
 
+public:
     CInPoint() { SetNull(); }
     CInPoint(CTransaction* ptxIn, unsigned int nIn) { ptx = ptxIn; n = nIn; }
     void SetNull() { ptx = NULL; n = (unsigned int) -1; }
     bool IsNull() const { return (ptx == NULL && n == (unsigned int) -1); }
+    const CTransaction* get_ptx() const { return ptx; }
 };
 
 
@@ -1624,7 +1626,7 @@ public:
     bool accept(CTxDB& txdb, CTransaction &tx,
                 bool fCheckInputs, bool* pfMissingInputs);
     bool addUnchecked(const uint256& hash, CTransaction &tx);
-    bool remove(CTransaction &tx);
+    bool remove(const CTransaction &tx);
     void clear();
     void queryHashes(std::vector<uint256>& vtxid);
 
