@@ -1518,7 +1518,7 @@ public:
         vHave.clear();
     }
 
-    bool IsNull()
+    bool IsNull() const
     {
         return vHave.empty();
     }
@@ -1540,7 +1540,7 @@ public:
         vHave.push_back((!fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet));
     }
 
-    int GetDistanceBack()
+    int GetDistanceBack() const
     {
         // Retrace how far back it was in the sender's branch
         int nDistance = 0;
@@ -1561,7 +1561,7 @@ public:
         return nDistance;
     }
 
-    CBlockIndex* GetBlockIndex()
+    CBlockIndex* GetBlockIndex() const
     {
         // Find the first block the caller has in the main chain
         BOOST_FOREACH(const uint256& hash, vHave)
@@ -1577,7 +1577,7 @@ public:
         return pindexGenesisBlock;
     }
 
-    uint256 GetBlockHash()
+    uint256 GetBlockHash() const
     {
         // Find the first block the caller has in the main chain
         BOOST_FOREACH(const uint256& hash, vHave)
@@ -1593,7 +1593,7 @@ public:
         return (!fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet);
     }
 
-    int GetHeight()
+    int GetHeight() const
     {
         CBlockIndex* pindex = GetBlockIndex();
         if (!pindex)
