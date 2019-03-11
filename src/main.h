@@ -1393,8 +1393,8 @@ public:
         hashNext = (pnext ? pnext->GetBlockHash() : 0);
     }
 
-    const uint256& getHashPrev() { return hashPrev; }
-    const uint256& getHashNext() { return hashNext; }
+    const uint256& getHashPrev() const { return hashPrev; }
+    const uint256& getHashNext() const { return hashNext; }
     void setHashNext(const uint256& newHashNext) { hashNext = newHashNext; }
 
     IMPLEMENT_SERIALIZE
