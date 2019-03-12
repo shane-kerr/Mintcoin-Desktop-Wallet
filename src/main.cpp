@@ -219,7 +219,7 @@ bool AddOrphanTx(const CDataStream& vMsg)
 
     mapOrphanTransactions[hash] = pvMsg;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
-        mapOrphanTransactionsByPrev[txin.prevout.getHash()].insert(make_pair(hash, pvMsg));
+        mapOrphanTransactionsByPrev[txin.getPrevout().getHash()].insert(make_pair(hash, pvMsg));
 
     printf("stored orphan tx %s (mapsz %" PRIszu ")\n", hash.ToString().substr(0,10).c_str(),
         mapOrphanTransactions.size());
@@ -235,9 +235,9 @@ void static EraseOrphanTx(uint256 hash)
     CDataStream(*pvMsg) >> tx;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
-        mapOrphanTransactionsByPrev[txin.prevout.getHash()].erase(hash);
-        if (mapOrphanTransactionsByPrev[txin.prevout.getHash()].empty())
-            mapOrphanTransactionsByPrev.erase(txin.prevout.getHash());
+        mapOrphanTransactionsByPrev[txin.getPrevout().getHash()].erase(hash);
+        if (mapOrphanTransactionsByPrev[txin.getPrevout().getHash()].empty())
+            mapOrphanTransactionsByPrev.erase(txin.getPrevout().getHash());
     }
     delete pvMsg;
     mapOrphanTransactions.erase(hash);
@@ -304,9 +304,9 @@ bool CTransaction::IsStandard() const
         // Biggest 'standard' txin is a 3-signature 3-of-3 CHECKMULTISIG
         // pay-to-script-hash, which is 3 ~80-byte signatures, 3
         // ~65-byte public keys, plus a few script ops.
-        if (txin.scriptSig.size() > 500)
+        if (txin.getScriptSig().size() > 500)
             return false;
-        if (!txin.scriptSig.IsPushOnly())
+        if (!txin.getScriptSig().IsPushOnly())
             return false;
     }
     BOOST_FOREACH(const CTxOut& txout, vout) {
@@ -354,7 +354,7 @@ bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
         // beside "push data" in the scriptSig the
         // IsStandard() call returns false
         vector<vector<unsigned char> > stack;
-        if (!EvalScript(stack, vin[i].scriptSig, *this, i, false, 0))
+        if (!EvalScript(stack, vin[i].getScriptSig(), *this, i, false, 0))
             return false;
 
         if (whichType == TX_SCRIPTHASH)
@@ -389,7 +389,7 @@ CTransaction::GetLegacySigOpCount() const
     unsigned int nSigOps = 0;
     BOOST_FOREACH(const CTxIn& txin, vin)
     {
-        nSigOps += txin.scriptSig.GetSigOpCount(false);
+        nSigOps += txin.getScriptSig().GetSigOpCount(false);
     }
     BOOST_FOREACH(const CTxOut& txout, vout)
     {
@@ -487,20 +487,20 @@ bool CTransaction::CheckTransaction() const
     set<COutPoint> vInOutPoints;
     BOOST_FOREACH(const CTxIn& txin, vin)
     {
-        if (vInOutPoints.count(txin.prevout))
+        if (vInOutPoints.count(txin.getPrevout()))
             return false;
-        vInOutPoints.insert(txin.prevout);
+        vInOutPoints.insert(txin.getPrevout());
     }
 
     if (IsCoinBase())
     {
-        if (vin[0].scriptSig.size() < 2 || vin[0].scriptSig.size() > 100)
+        if (vin[0].getScriptSig().size() < 2 || vin[0].getScriptSig().size() > 100)
             return DoS(100, error("CTransaction::CheckTransaction() : coinbase script size"));
     }
     else
     {
         BOOST_FOREACH(const CTxIn& txin, vin)
-            if (txin.prevout.IsNull())
+            if (txin.getPrevout().IsNull())
                 return DoS(10, error("CTransaction::CheckTransaction() : prevout is null"));
     }
 
@@ -579,7 +579,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
     const CTransaction* ptxOld = NULL;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        COutPoint outpoint = tx.vin[i].prevout;
+        COutPoint outpoint = tx.vin[i].getPrevout();
         if (mapNextTx.count(outpoint))
         {
             // Disable replacement feature for now
@@ -595,7 +595,7 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
                 return false;
             for (unsigned int i = 0; i < tx.vin.size(); i++)
             {
-                COutPoint outpoint = tx.vin[i].prevout;
+                COutPoint outpoint = tx.vin[i].getPrevout();
                 if (!mapNextTx.count(outpoint) || mapNextTx[outpoint].get_ptx() != ptxOld)
                     return false;
             }
@@ -702,7 +702,7 @@ bool CTxMemPool::addUnchecked(const uint256& hash, CTransaction &tx)
     {
         mapTx[hash] = tx;
         for (unsigned int i = 0; i < tx.vin.size(); i++)
-            mapNextTx[tx.vin[i].prevout] = CInPoint(&mapTx[hash], i);
+            mapNextTx[tx.vin[i].getPrevout()] = CInPoint(&mapTx[hash], i);
         nTransactionsUpdated++;
     }
     return true;
@@ -718,7 +718,7 @@ bool CTxMemPool::remove(const CTransaction &tx)
         if (mapTx.count(hash))
         {
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
-                mapNextTx.erase(txin.prevout);
+                mapNextTx.erase(txin.getPrevout());
             mapTx.erase(hash);
             nTransactionsUpdated++;
         }
@@ -1190,7 +1190,7 @@ bool CTransaction::DisconnectInputs(CTxDB& txdb)
     {
         BOOST_FOREACH(const CTxIn& txin, vin)
         {
-            COutPoint prevout = txin.prevout;
+            const COutPoint prevout = txin.getPrevout();
 
             // Get prev txindex from disk
             CTxIndex txindex;
@@ -1233,7 +1233,7 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
 
     for (unsigned int i = 0; i < vin.size(); i++)
     {
-        COutPoint prevout = vin[i].prevout;
+        const COutPoint prevout = vin[i].getPrevout();
         if (inputsRet.count(prevout.getHash()))
             continue; // Got it already
 
@@ -1278,7 +1278,7 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
     // Make sure all prevout.n indexes are valid:
     for (unsigned int i = 0; i < vin.size(); i++)
     {
-        const COutPoint prevout = vin[i].prevout;
+        const COutPoint prevout = vin[i].getPrevout();
         assert(inputsRet.count(prevout.getHash()) != 0);
         const CTxIndex& txindex = inputsRet[prevout.getHash()].first;
         const CTransaction& txPrev = inputsRet[prevout.getHash()].second;
@@ -1297,15 +1297,15 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
 
 const CTxOut& CTransaction::GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const
 {
-    MapPrevTx::const_iterator mi = inputs.find(input.prevout.getHash());
+    MapPrevTx::const_iterator mi = inputs.find(input.getPrevout().getHash());
     if (mi == inputs.end())
         throw std::runtime_error("CTransaction::GetOutputFor() : prevout.hash not found");
 
     const CTransaction& txPrev = (mi->second).second;
-    if (input.prevout.get_n() >= txPrev.vout.size())
+    if (input.getPrevout().get_n() >= txPrev.vout.size())
         throw std::runtime_error("CTransaction::GetOutputFor() : prevout.n out of range");
 
-    return txPrev.vout[input.prevout.get_n()];
+    return txPrev.vout[input.getPrevout().get_n()];
 }
 
 
@@ -1334,7 +1334,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(const MapPrevTx& inputs) const
     {
         const CTxOut& prevout = GetOutputFor(vin[i], inputs);
         if (prevout.scriptPubKey.IsPayToScriptHash())
-            nSigOps += prevout.scriptPubKey.GetSigOpCount(vin[i].scriptSig);
+            nSigOps += prevout.scriptPubKey.GetSigOpCount(vin[i].getScriptSig());
     }
     return nSigOps;
 }
@@ -1354,7 +1354,7 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
         int64 nFees = 0;
         for (unsigned int i = 0; i < vin.size(); i++)
         {
-            COutPoint prevout = vin[i].prevout;
+            const COutPoint prevout = vin[i].getPrevout();
             assert(inputs.count(prevout.getHash()) > 0);
             CTxIndex& txindex = inputs[prevout.getHash()].first;
             CTransaction& txPrev = inputs[prevout.getHash()].second;
@@ -1384,7 +1384,7 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
         // Helps prevent CPU exhaustion attacks.
         for (unsigned int i = 0; i < vin.size(); i++)
         {
-            COutPoint prevout = vin[i].prevout;
+            const COutPoint prevout = vin[i].getPrevout();
             assert(inputs.count(prevout.getHash()) > 0);
             CTxIndex& txindex = inputs[prevout.getHash()].first;
             CTransaction& txPrev = inputs[prevout.getHash()].second;
@@ -1460,7 +1460,7 @@ bool CTransaction::ClientConnectInputs()
         for (unsigned int i = 0; i < vin.size(); i++)
         {
             // Get prev tx from single transactions in memory
-            COutPoint prevout = vin[i].prevout;
+            const COutPoint prevout = vin[i].getPrevout();
             if (!mempool.exists(prevout.getHash()))
                 return false;
             CTransaction& txPrev = mempool.lookup(prevout.getHash());
@@ -1915,7 +1915,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const
         // First try finding the previous transaction in database
         CTransaction txPrev;
         CTxIndex txindex;
-        if (!txPrev.ReadFromDisk(txdb, txin.prevout, txindex))
+        if (!txPrev.ReadFromDisk(txdb, txin.getPrevout(), txindex))
             continue;  // previous transaction not in main chain
         if (nTime < txPrev.nTime)
             return false;  // Transaction timestamp violation
@@ -1927,7 +1927,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const
         if (block.GetBlockTime() + nStakeMinAge > nTime)
             continue; // only count coins meeting min age requirement
 
-        int64 nValueIn = txPrev.vout[txin.prevout.get_n()].nValue;
+        int64 nValueIn = txPrev.vout[txin.getPrevout().get_n()].nValue;
         bnCentSecond += CBigNum(nValueIn) * (nTime-txPrev.nTime) / CENT;
 
         if (fDebug && GetBoolArg("-printcoinage"))
@@ -2174,8 +2174,8 @@ bool CBlock::AcceptBlock()
 
     // Enforce rule that the coinbase starts with serialized block height
     CScript expect = CScript() << nHeight;
-    if (vtx[0].vin[0].scriptSig.size() < expect.size() ||
-        !std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
+    if (vtx[0].vin[0].getScriptSig().size() < expect.size() ||
+        !std::equal(expect.begin(), expect.end(), vtx[0].vin[0].getScriptSig().begin()))
         return DoS(100, error("AcceptBlock() : block height mismatch in coinbase"));
 
     // Write block to history file
@@ -2591,7 +2591,7 @@ bool LoadBlockIndex(bool fAllowNew)
         txNew.nTime = nChainStartTime;
         txNew.vin.resize(1);
         txNew.vout.resize(1);
-        txNew.vin[0].scriptSig = CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp));
+        txNew.vin[0].setScriptSig(CScript() << 486604799 << CBigNum(9999) << vector<unsigned char>((const unsigned char*)pszTimestamp, (const unsigned char*)pszTimestamp + strlen(pszTimestamp)));
         txNew.vout[0].SetEmpty();
 
         CBlock block;
@@ -3925,7 +3925,13 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     // Create coinbase tx
     CTransaction txNew;
     txNew.vin.resize(1);
-    txNew.vin[0].prevout.SetNull();
+
+    // XXX: The following line SHOULD be unnecessary, based as
+    // the resize() above should create a CTxIn with the default
+    // constructor, which in turn uses the default constructor for
+    // prevout, which calls SetNull().
+    //txNew.vin[0].prevout.SetNull();
+
     txNew.vout.resize(1);
     txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
 
@@ -4014,12 +4020,12 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                 // Read prev transaction
                 CTransaction txPrev;
                 CTxIndex txindex;
-                if (!txPrev.ReadFromDisk(txdb, txin.prevout, txindex))
+                if (!txPrev.ReadFromDisk(txdb, txin.getPrevout(), txindex))
                 {
                     // This should never happen; all transactions in the memory
                     // pool should connect to either transactions in the chain
                     // or other transactions in the memory pool.
-                    if (!mempool.mapTx.count(txin.prevout.getHash()))
+                    if (!mempool.mapTx.count(txin.getPrevout().getHash()))
                     {
                         printf("ERROR: mempool transaction missing input\n");
                         if (fDebug) assert("mempool transaction missing input" == 0);
@@ -4036,12 +4042,12 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                         vOrphan.push_back(COrphan(&tx));
                         porphan = &vOrphan.back();
                     }
-                    mapDependers[txin.prevout.getHash()].push_back(porphan);
-                    porphan->setDependsOn.insert(txin.prevout.getHash());
-                    nTotalIn += mempool.mapTx[txin.prevout.getHash()].vout[txin.prevout.get_n()].nValue;
+                    mapDependers[txin.getPrevout().getHash()].push_back(porphan);
+                    porphan->setDependsOn.insert(txin.getPrevout().getHash());
+                    nTotalIn += mempool.mapTx[txin.getPrevout().getHash()].vout[txin.getPrevout().get_n()].nValue;
                     continue;
                 }
-                int64 nValueIn = txPrev.vout[txin.prevout.get_n()].nValue;
+                int64 nValueIn = txPrev.vout[txin.getPrevout().get_n()].nValue;
                 nTotalIn += nValueIn;
 
                 int nConf = txindex.GetDepthInMainChain();
@@ -4206,8 +4212,8 @@ void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& 
     }
     ++nExtraNonce;
     unsigned int nHeight = pindexPrev->nHeight+1; // Height first in coinbase required for block.version=2
-    pblock->vtx[0].vin[0].scriptSig = (CScript() << nHeight << CBigNum(nExtraNonce)) + COINBASE_FLAGS;
-    assert(pblock->vtx[0].vin[0].scriptSig.size() <= 100);
+    pblock->vtx[0].vin[0].setScriptSig((CScript() << nHeight << CBigNum(nExtraNonce)) + COINBASE_FLAGS);
+    assert(pblock->vtx[0].vin[0].getScriptSig().size() <= 100);
 
     pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 }

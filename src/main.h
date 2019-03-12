@@ -272,11 +272,12 @@ public:
  */
 class CTxIn
 {
-public:
+private:
     COutPoint prevout;
     CScript scriptSig;
     unsigned int nSequence;
 
+public:
     CTxIn()
     {
         nSequence = std::numeric_limits<unsigned int>::max();
@@ -302,6 +303,13 @@ public:
         READWRITE(scriptSig);
         READWRITE(nSequence);
     )
+
+    const COutPoint& getPrevout() const { return prevout; }
+    const CScript& getScriptSig() const { return scriptSig; }
+    unsigned int get_nSequence() const { return nSequence; }
+
+    void setScriptSig(const CScript& newScriptSig) { scriptSig = newScriptSig; }
+    void resetSequence() { nSequence = 0; }
 
     bool IsFinal() const
     {
@@ -519,24 +527,24 @@ public:
         if (vin.size() != old.vin.size())
             return false;
         for (unsigned int i = 0; i < vin.size(); i++)
-            if (vin[i].prevout != old.vin[i].prevout)
+            if (vin[i].getPrevout() != old.vin[i].getPrevout())
                 return false;
 
         bool fNewer = false;
         unsigned int nLowest = std::numeric_limits<unsigned int>::max();
         for (unsigned int i = 0; i < vin.size(); i++)
         {
-            if (vin[i].nSequence != old.vin[i].nSequence)
+            if (vin[i].get_nSequence() != old.vin[i].get_nSequence())
             {
-                if (vin[i].nSequence <= nLowest)
+                if (vin[i].get_nSequence() <= nLowest)
                 {
                     fNewer = false;
-                    nLowest = vin[i].nSequence;
+                    nLowest = vin[i].get_nSequence();
                 }
-                if (old.vin[i].nSequence < nLowest)
+                if (old.vin[i].get_nSequence() < nLowest)
                 {
                     fNewer = true;
-                    nLowest = old.vin[i].nSequence;
+                    nLowest = old.vin[i].get_nSequence();
                 }
             }
         }
@@ -545,13 +553,13 @@ public:
 
     bool IsCoinBase() const
     {
-        return (vin.size() == 1 && vin[0].prevout.IsNull() && vout.size() >= 1);
+        return (vin.size() == 1 && vin[0].getPrevout().IsNull() && vout.size() >= 1);
     }
 
     bool IsCoinStake() const
     {
         // ppcoin: the coin stake transaction is marked with the first output empty
-        return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
+        return (vin.size() > 0 && (!vin[0].getPrevout().IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
 
 	bool IsCoinBaseOrStake() const
@@ -990,7 +998,7 @@ public:
 
     std::pair<COutPoint, unsigned int> GetProofOfStake() const
     {
-        return IsProofOfStake()? std::make_pair(vtx[1].vin[0].prevout, vtx[1].nTime) : std::make_pair(COutPoint(), (unsigned int)0);
+        return IsProofOfStake()? std::make_pair(vtx[1].vin[0].getPrevout(), vtx[1].nTime) : std::make_pair(COutPoint(), (unsigned int)0);
     }
 
     // ppcoin: get max transaction timestamp
@@ -1234,7 +1242,7 @@ public:
         if (block.IsProofOfStake())
         {
             SetProofOfStake();
-            prevoutStake = block.vtx[1].vin[0].prevout;
+            prevoutStake = block.vtx[1].vin[0].getPrevout();
             nStakeTime = block.vtx[1].nTime;
         }
         else

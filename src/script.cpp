@@ -1137,8 +1137,8 @@ uint256 SignatureHash(CScript scriptCode, const CTransaction& txTo, unsigned int
 
     // Blank out other inputs' signatures
     for (unsigned int i = 0; i < txTmp.vin.size(); i++)
-        txTmp.vin[i].scriptSig = CScript();
-    txTmp.vin[nIn].scriptSig = scriptCode;
+        txTmp.vin[i].setScriptSig(CScript());
+    txTmp.vin[nIn].setScriptSig(scriptCode);
 
     // Blank out some of the outputs
     if ((nHashType & 0x1f) == SIGHASH_NONE)
@@ -1149,7 +1149,7 @@ uint256 SignatureHash(CScript scriptCode, const CTransaction& txTo, unsigned int
         // Let the others update at will
         for (unsigned int i = 0; i < txTmp.vin.size(); i++)
             if (i != nIn)
-                txTmp.vin[i].nSequence = 0;
+                txTmp.vin[i].resetSequence();
     }
     else if ((nHashType & 0x1f) == SIGHASH_SINGLE)
     {
@@ -1167,7 +1167,7 @@ uint256 SignatureHash(CScript scriptCode, const CTransaction& txTo, unsigned int
         // Let the others update at will
         for (unsigned int i = 0; i < txTmp.vin.size(); i++)
             if (i != nIn)
-                txTmp.vin[i].nSequence = 0;
+                txTmp.vin[i].resetSequence();
     }
 
     // Blank out other inputs completely, not recommended for open transactions
@@ -1679,38 +1679,44 @@ bool SignSignature(const CKeyStore &keystore, const CScript& fromPubKey, CTransa
     uint256 hash = SignatureHash(fromPubKey, txTo, nIn, nHashType);
 
     txnouttype whichType;
-    if (!Solver(keystore, fromPubKey, hash, nHashType, txin.scriptSig, whichType))
+    CScript solvedScript = txin.getScriptSig();
+    bool fSolved = Solver(keystore, fromPubKey, hash, nHashType, solvedScript, whichType);
+    txin.setScriptSig(solvedScript);
+    if (!fSolved) {
         return false;
+    }
 
     if (whichType == TX_SCRIPTHASH)
     {
         // Solver returns the subscript that need to be evaluated;
         // the final scriptSig is the signatures from that
         // and then the serialized subscript:
-        CScript subscript = txin.scriptSig;
+        CScript subscript = txin.getScriptSig();
 
         // Recompute txn hash using subscript in place of scriptPubKey:
         uint256 hash2 = SignatureHash(subscript, txTo, nIn, nHashType);
 
         txnouttype subType;
+        CScript solvedScript = txin.getScriptSig();
         bool fSolved =
-            Solver(keystore, subscript, hash2, nHashType, txin.scriptSig, subType) && subType != TX_SCRIPTHASH;
+            Solver(keystore, subscript, hash2, nHashType, solvedScript, subType) && subType != TX_SCRIPTHASH;
         // Append serialized subscript whether or not it is completely signed:
-        txin.scriptSig << static_cast<valtype>(subscript);
+        solvedScript << static_cast<valtype>(subscript);
+        txin.setScriptSig(solvedScript);
         if (!fSolved) return false;
     }
 
     // Test solution
-    return VerifyScript(txin.scriptSig, fromPubKey, txTo, nIn, true, true, 0);
+    return VerifyScript(txin.getScriptSig(), fromPubKey, txTo, nIn, true, true, 0);
 }
 
 bool SignSignature(const CKeyStore &keystore, const CTransaction& txFrom, CTransaction& txTo, unsigned int nIn, int nHashType)
 {
     assert(nIn < txTo.vin.size());
     CTxIn& txin = txTo.vin[nIn];
-    assert(txin.prevout.get_n() < txFrom.vout.size());
-    assert(txin.prevout.getHash() == txFrom.GetHash());
-    const CTxOut& txout = txFrom.vout[txin.prevout.get_n()];
+    assert(txin.getPrevout().get_n() < txFrom.vout.size());
+    assert(txin.getPrevout().getHash() == txFrom.GetHash());
+    const CTxOut& txout = txFrom.vout[txin.getPrevout().get_n()];
 
     return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, nHashType);
 }
@@ -1719,14 +1725,14 @@ bool VerifySignature(const CTransaction& txFrom, const CTransaction& txTo, unsig
  {
     assert(nIn < txTo.vin.size());
     const CTxIn& txin = txTo.vin[nIn];
-    if (txin.prevout.get_n() >= txFrom.vout.size())
+    if (txin.getPrevout().get_n() >= txFrom.vout.size())
         return false;
-    const CTxOut& txout = txFrom.vout[txin.prevout.get_n()];
+    const CTxOut& txout = txFrom.vout[txin.getPrevout().get_n()];
 
-    if (txin.prevout.getHash() != txFrom.GetHash())
+    if (txin.getPrevout().getHash() != txFrom.GetHash())
         return false;
 
-    return VerifyScript(txin.scriptSig, txout.scriptPubKey, txTo, nIn, fValidatePayToScriptHash, fStrictEncodings, nHashType);
+    return VerifyScript(txin.getScriptSig(), txout.scriptPubKey, txTo, nIn, fValidatePayToScriptHash, fStrictEncodings, nHashType);
 }
 
 static CScript PushAll(const vector<valtype>& values)

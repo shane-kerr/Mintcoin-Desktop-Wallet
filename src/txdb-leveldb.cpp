@@ -489,7 +489,7 @@ bool CTxDB::LoadBlockIndex()
                                     {
                                         bool fFound = false;
                                         BOOST_FOREACH(const CTxIn &txin, txSpend.vin)
-                                            if (txin.prevout.getHash() == hashTx && txin.prevout.get_n() == nOutput)
+                                            if (txin.getPrevout().getHash() == hashTx && txin.getPrevout().get_n() == nOutput)
                                                 fFound = true;
                                         if (!fFound)
                                         {
@@ -509,10 +509,10 @@ bool CTxDB::LoadBlockIndex()
                      BOOST_FOREACH(const CTxIn &txin, tx.vin)
                      {
                           CTxIndex txindex;
-                          if (ReadTxIndex(txin.prevout.getHash(), txindex))
-                              if (txindex.vSpent.size()-1 < txin.prevout.get_n() || txindex.vSpent[txin.prevout.get_n()].IsNull())
+                          if (ReadTxIndex(txin.getPrevout().getHash(), txindex))
+                              if (txindex.vSpent.size()-1 < txin.getPrevout().get_n() || txindex.vSpent[txin.getPrevout().get_n()].IsNull())
                               {
-                                  printf("LoadBlockIndex(): *** found unspent prevout %s:%i in %s\n", txin.prevout.getHash().ToString().c_str(), txin.prevout.get_n(), hashTx.ToString().c_str());
+                                  printf("LoadBlockIndex(): *** found unspent prevout %s:%i in %s\n", txin.getPrevout().getHash().ToString().c_str(), txin.getPrevout().get_n(), hashTx.ToString().c_str());
                                   pindexFork = pindex->pprev;
                               }
                      }

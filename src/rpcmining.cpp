@@ -177,7 +177,7 @@ Value getworkex(const Array& params, bool fHelp)
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
         // Save
-        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
+        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].getScriptSig());
 
         // Prebuild hash buffers
         char pmidstate[32];
@@ -236,7 +236,7 @@ Value getworkex(const Array& params, bool fHelp)
         pblock->nNonce = pdata->nNonce;
 
         if(coinbase.size() == 0)
-            pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
+            pblock->vtx[0].vin[0].setScriptSig(mapNewBlock[pdata->hashMerkleRoot].second);
         else
             CDataStream(coinbase, SER_NETWORK, PROTOCOL_VERSION) >> pblock->vtx[0]; // FIXME - HACK!
 
@@ -319,7 +319,7 @@ Value getwork(const Array& params, bool fHelp)
         IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
         // Save
-        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].scriptSig);
+        mapNewBlock[pblock->hashMerkleRoot] = make_pair(pblock, pblock->vtx[0].vin[0].getScriptSig());
 
         // Pre-build hash buffers
         char pmidstate[32];
@@ -355,7 +355,7 @@ Value getwork(const Array& params, bool fHelp)
 
         pblock->nTime = pdata->nTime;
         pblock->nNonce = pdata->nNonce;
-        pblock->vtx[0].vin[0].scriptSig = mapNewBlock[pdata->hashMerkleRoot].second;
+        pblock->vtx[0].vin[0].setScriptSig(mapNewBlock[pdata->hashMerkleRoot].second);
         pblock->hashMerkleRoot = pblock->BuildMerkleTree();
 
         if (!pblock->SignBlock(*pwalletMain))

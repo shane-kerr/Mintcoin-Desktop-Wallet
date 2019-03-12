@@ -667,9 +667,9 @@ public:
 
             BOOST_FOREACH(const CTxIn& txin, ptx->vin)
             {
-                if (!mapPrev.count(txin.prevout.getHash()))
+                if (!mapPrev.count(txin.getPrevout().getHash()))
                     return false;
-                vWorkQueue.push_back(mapPrev[txin.prevout.getHash()]);
+                vWorkQueue.push_back(mapPrev[txin.getPrevout().getHash()]);
             }
         }
         return true;

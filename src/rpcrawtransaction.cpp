@@ -53,17 +53,17 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     {
         Object in;
         if (tx.IsCoinBase())
-            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            in.push_back(Pair("coinbase", HexStr(txin.getScriptSig().begin(), txin.getScriptSig().end())));
         else
         {
-            in.push_back(Pair("txid", txin.prevout.getHash().GetHex()));
-            in.push_back(Pair("vout", (boost::int64_t)txin.prevout.get_n()));
+            in.push_back(Pair("txid", txin.getPrevout().getHash().GetHex()));
+            in.push_back(Pair("vout", (boost::int64_t)txin.getPrevout().get_n()));
             Object o;
-            o.push_back(Pair("asm", txin.scriptSig.ToString()));
-            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            o.push_back(Pair("asm", txin.getScriptSig().ToString()));
+            o.push_back(Pair("hex", HexStr(txin.getScriptSig().begin(), txin.getScriptSig().end())));
             in.push_back(Pair("scriptSig", o));
         }
-        in.push_back(Pair("sequence", (boost::int64_t)txin.nSequence));
+        in.push_back(Pair("sequence", (boost::int64_t)txin.get_nSequence()));
         vin.push_back(in);
     }
     entry.push_back(Pair("vin", vin));
@@ -354,9 +354,9 @@ Value signrawtransaction(const Array& params, bool fHelp)
         // Copy results into mapPrevOut:
         BOOST_FOREACH(const CTxIn& txin, tempTx.vin)
         {
-            const uint256& prevHash = txin.prevout.getHash();
-            if (mapPrevTx.count(prevHash) && mapPrevTx[prevHash].second.vout.size()>txin.prevout.get_n())
-                mapPrevOut[txin.prevout] = mapPrevTx[prevHash].second.vout[txin.prevout.get_n()].scriptPubKey;
+            const uint256& prevHash = txin.getPrevout().getHash();
+            if (mapPrevTx.count(prevHash) && mapPrevTx[prevHash].second.vout.size()>txin.getPrevout().get_n())
+                mapPrevOut[txin.getPrevout()] = mapPrevTx[prevHash].second.vout[txin.getPrevout().get_n()].scriptPubKey;
         }
     }
 
@@ -455,14 +455,20 @@ Value signrawtransaction(const Array& params, bool fHelp)
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++)
     {
         CTxIn& txin = mergedTx.vin[i];
-        if (mapPrevOut.count(txin.prevout) == 0)
+        if (mapPrevOut.count(txin.getPrevout()) == 0)
         {
             fComplete = false;
             continue;
         }
-        const CScript& prevPubKey = mapPrevOut[txin.prevout];
+        const CScript& prevPubKey = mapPrevOut[txin.getPrevout()];
 
-        txin.scriptSig.clear();
+        // XXX: The following line should be equivalent to the two
+        //      lines after it. Using this we don't need an additional
+        //      method to perform the clear() operation.
+        //txin.scriptSig.clear();
+        CScript empty;
+        txin.setScriptSig(empty);
+
         // Only sign SIGHASH_SINGLE if there's a corresponding output:
         if (!fHashSingle || (i < mergedTx.vout.size()))
             SignSignature(keystore, prevPubKey, mergedTx, i, nHashType);
@@ -470,9 +476,9 @@ Value signrawtransaction(const Array& params, bool fHelp)
         // ... and merge in other signatures:
         BOOST_FOREACH(const CTransaction& txv, txVariants)
         {
-            txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
+            txin.setScriptSig(CombineSignatures(prevPubKey, mergedTx, i, txin.getScriptSig(), txv.vin[i].getScriptSig()));
         }
-        if (!VerifyScript(txin.scriptSig, prevPubKey, mergedTx, i, true, true, 0))
+        if (!VerifyScript(txin.getScriptSig(), prevPubKey, mergedTx, i, true, true, 0))
             fComplete = false;
     }
 
