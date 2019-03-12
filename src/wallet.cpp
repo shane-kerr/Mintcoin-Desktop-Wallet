@@ -345,18 +345,18 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx)
         LOCK(cs_wallet);
         BOOST_FOREACH(const CTxIn& txin, tx.vin)
         {
-            map<uint256, CWalletTx>::iterator mi = mapWallet.find(txin.prevout.hash);
+            map<uint256, CWalletTx>::iterator mi = mapWallet.find(txin.prevout.getHash());
             if (mi != mapWallet.end())
             {
                 CWalletTx& wtx = (*mi).second;
-                if (txin.prevout.n >= wtx.vout.size())
+                if (txin.prevout.get_n() >= wtx.vout.size())
                     printf("WalletUpdateSpent: bad wtx %s\n", wtx.GetHash().ToString().c_str());
-                else if (!wtx.IsSpent(txin.prevout.n) && IsMine(wtx.vout[txin.prevout.n]))
+                else if (!wtx.IsSpent(txin.prevout.get_n()) && IsMine(wtx.vout[txin.prevout.get_n()]))
                 {
                     printf("WalletUpdateSpent found spent coin %sMNT %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
-                    wtx.MarkSpent(txin.prevout.n);
+                    wtx.MarkSpent(txin.prevout.get_n());
                     wtx.WriteToDisk();
-                    NotifyTransactionChanged(this, txin.prevout.hash, CT_UPDATED);
+                    NotifyTransactionChanged(this, txin.prevout.getHash(), CT_UPDATED);
                 }
             }
         }
@@ -540,12 +540,12 @@ bool CWallet::IsMine(const CTxIn &txin) const
 {
     {
         LOCK(cs_wallet);
-        map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.hash);
+        map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.getHash());
         if (mi != mapWallet.end())
         {
             const CWalletTx& prev = (*mi).second;
-            if (txin.prevout.n < prev.vout.size())
-                if (IsMine(prev.vout[txin.prevout.n]))
+            if (txin.prevout.get_n() < prev.vout.size())
+                if (IsMine(prev.vout[txin.prevout.get_n()]))
                     return true;
         }
     }
@@ -556,13 +556,13 @@ int64 CWallet::GetDebit(const CTxIn &txin) const
 {
     {
         LOCK(cs_wallet);
-        map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.hash);
+        map<uint256, CWalletTx>::const_iterator mi = mapWallet.find(txin.prevout.getHash());
         if (mi != mapWallet.end())
         {
             const CWalletTx& prev = (*mi).second;
-            if (txin.prevout.n < prev.vout.size())
-                if (IsMine(prev.vout[txin.prevout.n]))
-                    return prev.vout[txin.prevout.n].nValue;
+            if (txin.prevout.get_n() < prev.vout.size())
+                if (IsMine(prev.vout[txin.prevout.get_n()]))
+                    return prev.vout[txin.prevout.get_n()].nValue;
         }
     }
     return 0;
@@ -733,7 +733,7 @@ void CWalletTx::AddSupportingTransactions(CTxDB& txdb)
     {
         vector<uint256> vWorkQueue;
         BOOST_FOREACH(const CTxIn& txin, vin)
-            vWorkQueue.push_back(txin.prevout.hash);
+            vWorkQueue.push_back(txin.prevout.getHash());
 
         // This critsect is OK because txdb is already open
         {
@@ -775,7 +775,7 @@ void CWalletTx::AddSupportingTransactions(CTxDB& txdb)
                 if (nDepth < COPY_DEPTH)
                 {
                     BOOST_FOREACH(const CTxIn& txin, tx.vin)
-                        vWorkQueue.push_back(txin.prevout.hash);
+                        vWorkQueue.push_back(txin.prevout.getHash());
                 }
             }
         }
@@ -1612,7 +1612,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         // Attempt to add more inputs
         // Only add coins of the same key/address as kernel
         if (txNew.vout.size() == 2 && ((pcoin.first->vout[pcoin.second].scriptPubKey == scriptPubKeyKernel || pcoin.first->vout[pcoin.second].scriptPubKey == txNew.vout[1].scriptPubKey))
-            && pcoin.first->GetHash() != txNew.vin[0].prevout.hash)
+            && pcoin.first->GetHash() != txNew.vin[0].prevout.getHash())
         {
             // Stop adding more inputs if already too many inputs
             if (txNew.vin.size() >= 100)
@@ -1712,9 +1712,9 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
             set<CWalletTx*> setCoins;
             BOOST_FOREACH(const CTxIn& txin, wtxNew.vin)
             {
-                CWalletTx &coin = mapWallet[txin.prevout.hash];
+                CWalletTx &coin = mapWallet[txin.prevout.getHash()];
                 coin.BindWallet(this);
-                coin.MarkSpent(txin.prevout.n);
+                coin.MarkSpent(txin.prevout.get_n());
                 coin.WriteToDisk();
                 NotifyTransactionChanged(this, coin.GetHash(), CT_UPDATED);
             }
@@ -2106,7 +2106,7 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
             BOOST_FOREACH(CTxIn txin, pcoin->vin)
             {
                 CTxDestination address;
-                if(!ExtractDestination(mapWallet[txin.prevout.hash].vout[txin.prevout.n].scriptPubKey, address))
+                if(!ExtractDestination(mapWallet[txin.prevout.getHash()].vout[txin.prevout.get_n()].scriptPubKey, address))
                     continue;
                 grouping.insert(address);
             }
@@ -2115,7 +2115,7 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
             BOOST_FOREACH(CTxOut txout, pcoin->vout)
                 if (IsChange(txout))
                 {
-                    CWalletTx tx = mapWallet[pcoin->vin[0].prevout.hash];
+                    CWalletTx tx = mapWallet[pcoin->vin[0].prevout.getHash()];
                     CTxDestination txoutAddr;
                     if(!ExtractDestination(txout.scriptPubKey, txoutAddr))
                         continue;
@@ -2233,13 +2233,13 @@ void CWallet::DisableTransaction(const CTransaction &tx)
     LOCK(cs_wallet);
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
-        map<uint256, CWalletTx>::iterator mi = mapWallet.find(txin.prevout.hash);
+        map<uint256, CWalletTx>::iterator mi = mapWallet.find(txin.prevout.getHash());
         if (mi != mapWallet.end())
         {
             CWalletTx& prev = (*mi).second;
-            if (txin.prevout.n < prev.vout.size() && IsMine(prev.vout[txin.prevout.n]))
+            if (txin.prevout.get_n() < prev.vout.size() && IsMine(prev.vout[txin.prevout.get_n()]))
             {
-                prev.MarkUnspent(txin.prevout.n);
+                prev.MarkUnspent(txin.prevout.get_n());
                 prev.WriteToDisk();
             }
         }

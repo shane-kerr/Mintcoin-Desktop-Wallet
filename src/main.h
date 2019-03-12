@@ -223,15 +223,19 @@ public:
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
 class COutPoint
 {
-public:
+private:
     uint256 hash;
     unsigned int n;
 
+public:
     COutPoint() { SetNull(); }
     COutPoint(uint256 hashIn, unsigned int nIn) { hash = hashIn; n = nIn; }
     IMPLEMENT_SERIALIZE( READWRITE(FLATDATA(*this)); )
     void SetNull() { hash = 0; n = (unsigned int) -1; }
     bool IsNull() const { return (hash == 0 && n == (unsigned int) -1); }
+
+    const uint256& getHash() const { return hash; }
+    unsigned int get_n() const { return n; }
 
     friend bool operator<(const COutPoint& a, const COutPoint& b)
     {
@@ -318,7 +322,7 @@ public:
 
     std::string ToStringShort() const
     {
-        return strprintf(" %s %d", prevout.hash.ToString().c_str(), prevout.n);
+        return strprintf(" %s %d", prevout.getHash().ToString().c_str(), prevout.get_n());
     }
 
     std::string ToString() const

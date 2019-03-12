@@ -1708,9 +1708,9 @@ bool SignSignature(const CKeyStore &keystore, const CTransaction& txFrom, CTrans
 {
     assert(nIn < txTo.vin.size());
     CTxIn& txin = txTo.vin[nIn];
-    assert(txin.prevout.n < txFrom.vout.size());
-    assert(txin.prevout.hash == txFrom.GetHash());
-    const CTxOut& txout = txFrom.vout[txin.prevout.n];
+    assert(txin.prevout.get_n() < txFrom.vout.size());
+    assert(txin.prevout.getHash() == txFrom.GetHash());
+    const CTxOut& txout = txFrom.vout[txin.prevout.get_n()];
 
     return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, nHashType);
 }
@@ -1719,11 +1719,11 @@ bool VerifySignature(const CTransaction& txFrom, const CTransaction& txTo, unsig
  {
     assert(nIn < txTo.vin.size());
     const CTxIn& txin = txTo.vin[nIn];
-    if (txin.prevout.n >= txFrom.vout.size())
+    if (txin.prevout.get_n() >= txFrom.vout.size())
         return false;
-    const CTxOut& txout = txFrom.vout[txin.prevout.n];
+    const CTxOut& txout = txFrom.vout[txin.prevout.get_n()];
 
-    if (txin.prevout.hash != txFrom.GetHash())
+    if (txin.prevout.getHash() != txFrom.GetHash())
         return false;
 
     return VerifyScript(txin.scriptSig, txout.scriptPubKey, txTo, nIn, fValidatePayToScriptHash, fStrictEncodings, nHashType);

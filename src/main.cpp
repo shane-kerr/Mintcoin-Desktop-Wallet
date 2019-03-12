@@ -219,7 +219,7 @@ bool AddOrphanTx(const CDataStream& vMsg)
 
     mapOrphanTransactions[hash] = pvMsg;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
-        mapOrphanTransactionsByPrev[txin.prevout.hash].insert(make_pair(hash, pvMsg));
+        mapOrphanTransactionsByPrev[txin.prevout.getHash()].insert(make_pair(hash, pvMsg));
 
     printf("stored orphan tx %s (mapsz %" PRIszu ")\n", hash.ToString().substr(0,10).c_str(),
         mapOrphanTransactions.size());
@@ -235,9 +235,9 @@ void static EraseOrphanTx(uint256 hash)
     CDataStream(*pvMsg) >> tx;
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
-        mapOrphanTransactionsByPrev[txin.prevout.hash].erase(hash);
-        if (mapOrphanTransactionsByPrev[txin.prevout.hash].empty())
-            mapOrphanTransactionsByPrev.erase(txin.prevout.hash);
+        mapOrphanTransactionsByPrev[txin.prevout.getHash()].erase(hash);
+        if (mapOrphanTransactionsByPrev[txin.prevout.getHash()].empty())
+            mapOrphanTransactionsByPrev.erase(txin.prevout.getHash());
     }
     delete pvMsg;
     mapOrphanTransactions.erase(hash);
@@ -269,11 +269,11 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans)
 bool CTransaction::ReadFromDisk(CTxDB& txdb, COutPoint prevout, CTxIndex& txindexRet)
 {
     SetNull();
-    if (!txdb.ReadTxIndex(prevout.hash, txindexRet))
+    if (!txdb.ReadTxIndex(prevout.getHash(), txindexRet))
         return false;
     if (!ReadFromDisk(txindexRet.pos))
         return false;
-    if (prevout.n >= vout.size())
+    if (prevout.get_n() >= vout.size())
     {
         SetNull();
         return false;
@@ -1194,17 +1194,17 @@ bool CTransaction::DisconnectInputs(CTxDB& txdb)
 
             // Get prev txindex from disk
             CTxIndex txindex;
-            if (!txdb.ReadTxIndex(prevout.hash, txindex))
+            if (!txdb.ReadTxIndex(prevout.getHash(), txindex))
                 return error("DisconnectInputs() : ReadTxIndex failed");
 
-            if (prevout.n >= txindex.vSpent.size())
+            if (prevout.get_n() >= txindex.vSpent.size())
                 return error("DisconnectInputs() : prevout.n out of range");
 
             // Mark outpoint as not spent
-            txindex.vSpent[prevout.n].SetNull();
+            txindex.vSpent[prevout.get_n()].SetNull();
 
             // Write back
-            if (!txdb.UpdateTxIndex(prevout.hash, txindex))
+            if (!txdb.UpdateTxIndex(prevout.getHash(), txindex))
                 return error("DisconnectInputs() : UpdateTxIndex failed");
         }
     }
@@ -1234,35 +1234,35 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
     for (unsigned int i = 0; i < vin.size(); i++)
     {
         COutPoint prevout = vin[i].prevout;
-        if (inputsRet.count(prevout.hash))
+        if (inputsRet.count(prevout.getHash()))
             continue; // Got it already
 
         // Read txindex
-        CTxIndex& txindex = inputsRet[prevout.hash].first;
+        CTxIndex& txindex = inputsRet[prevout.getHash()].first;
         bool fFound = true;
-        if ((fBlock || fMiner) && mapTestPool.count(prevout.hash))
+        if ((fBlock || fMiner) && mapTestPool.count(prevout.getHash()))
         {
             // Get txindex from current proposed changes
-            txindex = mapTestPool.find(prevout.hash)->second;
+            txindex = mapTestPool.find(prevout.getHash())->second;
         }
         else
         {
             // Read txindex from txdb
-            fFound = txdb.ReadTxIndex(prevout.hash, txindex);
+            fFound = txdb.ReadTxIndex(prevout.getHash(), txindex);
         }
         if (!fFound && (fBlock || fMiner))
-            return fMiner ? false : error("FetchInputs() : %s prev tx %s index entry not found", GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
+            return fMiner ? false : error("FetchInputs() : %s prev tx %s index entry not found", GetHash().ToString().substr(0,10).c_str(),  prevout.getHash().ToString().substr(0,10).c_str());
 
         // Read txPrev
-        CTransaction& txPrev = inputsRet[prevout.hash].second;
+        CTransaction& txPrev = inputsRet[prevout.getHash()].second;
         if (!fFound || txindex.pos == CDiskTxPos(1,1,1))
         {
             // Get prev tx from single transactions in memory
             {
                 LOCK(mempool.cs);
-                if (!mempool.exists(prevout.hash))
-                    return error("FetchInputs() : %s mempool Tx prev not found %s", GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
-                txPrev = mempool.lookup(prevout.hash);
+                if (!mempool.exists(prevout.getHash()))
+                    return error("FetchInputs() : %s mempool Tx prev not found %s", GetHash().ToString().substr(0,10).c_str(),  prevout.getHash().ToString().substr(0,10).c_str());
+                txPrev = mempool.lookup(prevout.getHash());
             }
             if (!fFound)
                 txindex.vSpent.resize(txPrev.vout.size());
@@ -1271,7 +1271,7 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
         {
             // Get prev tx from disk
             if (!txPrev.ReadFromDisk(txindex.pos))
-                return error("FetchInputs() : %s ReadFromDisk prev tx %s failed", GetHash().ToString().substr(0,10).c_str(),  prevout.hash.ToString().substr(0,10).c_str());
+                return error("FetchInputs() : %s ReadFromDisk prev tx %s failed", GetHash().ToString().substr(0,10).c_str(),  prevout.getHash().ToString().substr(0,10).c_str());
         }
     }
 
@@ -1279,15 +1279,15 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
     for (unsigned int i = 0; i < vin.size(); i++)
     {
         const COutPoint prevout = vin[i].prevout;
-        assert(inputsRet.count(prevout.hash) != 0);
-        const CTxIndex& txindex = inputsRet[prevout.hash].first;
-        const CTransaction& txPrev = inputsRet[prevout.hash].second;
-        if (prevout.n >= txPrev.vout.size() || prevout.n >= txindex.vSpent.size())
+        assert(inputsRet.count(prevout.getHash()) != 0);
+        const CTxIndex& txindex = inputsRet[prevout.getHash()].first;
+        const CTransaction& txPrev = inputsRet[prevout.getHash()].second;
+        if (prevout.get_n() >= txPrev.vout.size() || prevout.get_n() >= txindex.vSpent.size())
         {
             // Revisit this if/when transaction replacement is implemented and allows
             // adding inputs:
             fInvalid = true;
-            return DoS(100, error("FetchInputs() : %s prevout.n out of range %d %" PRIszu " %" PRIszu " prev tx %s\n%s", GetHash().ToString().substr(0,10).c_str(), prevout.n, txPrev.vout.size(), txindex.vSpent.size(), prevout.hash.ToString().substr(0,10).c_str(), txPrev.ToString().c_str()));
+            return DoS(100, error("FetchInputs() : %s prevout.n out of range %d %" PRIszu " %" PRIszu " prev tx %s\n%s", GetHash().ToString().substr(0,10).c_str(), prevout.get_n(), txPrev.vout.size(), txindex.vSpent.size(), prevout.getHash().ToString().substr(0,10).c_str(), txPrev.ToString().c_str()));
         }
     }
 
@@ -1297,15 +1297,15 @@ bool CTransaction::FetchInputs(CTxDB& txdb, const map<uint256, CTxIndex>& mapTes
 
 const CTxOut& CTransaction::GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const
 {
-    MapPrevTx::const_iterator mi = inputs.find(input.prevout.hash);
+    MapPrevTx::const_iterator mi = inputs.find(input.prevout.getHash());
     if (mi == inputs.end())
         throw std::runtime_error("CTransaction::GetOutputFor() : prevout.hash not found");
 
     const CTransaction& txPrev = (mi->second).second;
-    if (input.prevout.n >= txPrev.vout.size())
+    if (input.prevout.get_n() >= txPrev.vout.size())
         throw std::runtime_error("CTransaction::GetOutputFor() : prevout.n out of range");
 
-    return txPrev.vout[input.prevout.n];
+    return txPrev.vout[input.prevout.get_n()];
 }
 
 
@@ -1355,12 +1355,12 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
         for (unsigned int i = 0; i < vin.size(); i++)
         {
             COutPoint prevout = vin[i].prevout;
-            assert(inputs.count(prevout.hash) > 0);
-            CTxIndex& txindex = inputs[prevout.hash].first;
-            CTransaction& txPrev = inputs[prevout.hash].second;
+            assert(inputs.count(prevout.getHash()) > 0);
+            CTxIndex& txindex = inputs[prevout.getHash()].first;
+            CTransaction& txPrev = inputs[prevout.getHash()].second;
 
-            if (prevout.n >= txPrev.vout.size() || prevout.n >= txindex.vSpent.size())
-                return DoS(100, error("ConnectInputs() : %s prevout.n out of range %d %" PRIszu " %" PRIszu " prev tx %s\n%s", GetHash().ToString().substr(0,10).c_str(), prevout.n, txPrev.vout.size(), txindex.vSpent.size(), prevout.hash.ToString().substr(0,10).c_str(), txPrev.ToString().c_str()));
+            if (prevout.get_n() >= txPrev.vout.size() || prevout.get_n() >= txindex.vSpent.size())
+                return DoS(100, error("ConnectInputs() : %s prevout.n out of range %d %" PRIszu " %" PRIszu " prev tx %s\n%s", GetHash().ToString().substr(0,10).c_str(), prevout.get_n(), txPrev.vout.size(), txindex.vSpent.size(), prevout.getHash().ToString().substr(0,10).c_str(), txPrev.ToString().c_str()));
 
 			int nMinConfirmations = (GetAdjustedTime() > FORK_TIME ? nCoinbaseMaturity + 10 : nCoinbaseMaturity);
             // If prev is coinbase or coinstake, check that it's matured
@@ -1374,8 +1374,8 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
                 return DoS(100, error("ConnectInputs() : transaction timestamp earlier than input transaction"));
 
             // Check for negative or overflow input values
-            nValueIn += txPrev.vout[prevout.n].nValue;
-            if (!MoneyRange(txPrev.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
+            nValueIn += txPrev.vout[prevout.get_n()].nValue;
+            if (!MoneyRange(txPrev.vout[prevout.get_n()].nValue) || !MoneyRange(nValueIn))
                 return DoS(100, error("ConnectInputs() : txin values out of range"));
 
         }
@@ -1385,15 +1385,15 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
         for (unsigned int i = 0; i < vin.size(); i++)
         {
             COutPoint prevout = vin[i].prevout;
-            assert(inputs.count(prevout.hash) > 0);
-            CTxIndex& txindex = inputs[prevout.hash].first;
-            CTransaction& txPrev = inputs[prevout.hash].second;
+            assert(inputs.count(prevout.getHash()) > 0);
+            CTxIndex& txindex = inputs[prevout.getHash()].first;
+            CTransaction& txPrev = inputs[prevout.getHash()].second;
 
             // Check for conflicts (double-spend)
             // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
             // for an attacker to attempt to split the network.
-            if (!txindex.vSpent[prevout.n].IsNull())
-                return fMiner ? false : error("ConnectInputs() : %s prev tx already used at %s", GetHash().ToString().substr(0,10).c_str(), txindex.vSpent[prevout.n].ToString().c_str());
+            if (!txindex.vSpent[prevout.get_n()].IsNull())
+                return fMiner ? false : error("ConnectInputs() : %s prev tx already used at %s", GetHash().ToString().substr(0,10).c_str(), txindex.vSpent[prevout.get_n()].ToString().c_str());
 
             // Skip ECDSA signature verification when connecting blocks (fBlock=true)
             // before the last blockchain checkpoint. This is safe because block merkle hashes are
@@ -1406,12 +1406,12 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
             }
 
             // Mark outpoints as spent
-            txindex.vSpent[prevout.n] = posThisTx;
+            txindex.vSpent[prevout.get_n()] = posThisTx;
 
             // Write back
             if (fBlock || fMiner)
             {
-                mapTestPool[prevout.hash] = txindex;
+                mapTestPool[prevout.getHash()] = txindex;
             }
         }
 
@@ -1461,11 +1461,11 @@ bool CTransaction::ClientConnectInputs()
         {
             // Get prev tx from single transactions in memory
             COutPoint prevout = vin[i].prevout;
-            if (!mempool.exists(prevout.hash))
+            if (!mempool.exists(prevout.getHash()))
                 return false;
-            CTransaction& txPrev = mempool.lookup(prevout.hash);
+            CTransaction& txPrev = mempool.lookup(prevout.getHash());
 
-            if (prevout.n >= txPrev.vout.size())
+            if (prevout.get_n() >= txPrev.vout.size())
                 return false;
 
             // Verify signature
@@ -1482,9 +1482,9 @@ bool CTransaction::ClientConnectInputs()
             // // Flag outpoints as used
             // txPrev.vout[prevout.n].posNext = posThisTx;
 
-            nValueIn += txPrev.vout[prevout.n].nValue;
+            nValueIn += txPrev.vout[prevout.get_n()].nValue;
 
-            if (!MoneyRange(txPrev.vout[prevout.n].nValue) || !MoneyRange(nValueIn))
+            if (!MoneyRange(txPrev.vout[prevout.get_n()].nValue) || !MoneyRange(nValueIn))
                 return error("ClientConnectInputs() : txin values out of range");
         }
         if (GetValueOut() > nValueIn)
@@ -1927,7 +1927,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const
         if (block.GetBlockTime() + nStakeMinAge > nTime)
             continue; // only count coins meeting min age requirement
 
-        int64 nValueIn = txPrev.vout[txin.prevout.n].nValue;
+        int64 nValueIn = txPrev.vout[txin.prevout.get_n()].nValue;
         bnCentSecond += CBigNum(nValueIn) * (nTime-txPrev.nTime) / CENT;
 
         if (fDebug && GetBoolArg("-printcoinage"))
@@ -4019,7 +4019,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                     // This should never happen; all transactions in the memory
                     // pool should connect to either transactions in the chain
                     // or other transactions in the memory pool.
-                    if (!mempool.mapTx.count(txin.prevout.hash))
+                    if (!mempool.mapTx.count(txin.prevout.getHash()))
                     {
                         printf("ERROR: mempool transaction missing input\n");
                         if (fDebug) assert("mempool transaction missing input" == 0);
@@ -4036,12 +4036,12 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                         vOrphan.push_back(COrphan(&tx));
                         porphan = &vOrphan.back();
                     }
-                    mapDependers[txin.prevout.hash].push_back(porphan);
-                    porphan->setDependsOn.insert(txin.prevout.hash);
-                    nTotalIn += mempool.mapTx[txin.prevout.hash].vout[txin.prevout.n].nValue;
+                    mapDependers[txin.prevout.getHash()].push_back(porphan);
+                    porphan->setDependsOn.insert(txin.prevout.getHash());
+                    nTotalIn += mempool.mapTx[txin.prevout.getHash()].vout[txin.prevout.get_n()].nValue;
                     continue;
                 }
-                int64 nValueIn = txPrev.vout[txin.prevout.n].nValue;
+                int64 nValueIn = txPrev.vout[txin.prevout.get_n()].nValue;
                 nTotalIn += nValueIn;
 
                 int nConf = txindex.GetDepthInMainChain();

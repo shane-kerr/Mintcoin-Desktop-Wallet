@@ -310,7 +310,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
 
     CBigNum bnTargetPerCoinDay;
     bnTargetPerCoinDay.SetCompact(nBits);
-    int64 nValueIn = txPrev.vout[prevout.n].nValue;
+    int64 nValueIn = txPrev.vout[prevout.get_n()].nValue;
 
     // v0.3 protocol kernel hash weight starts from 0 at the min age
     // this change increases active coins participating the hash and helps
@@ -333,7 +333,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
 	// printf(">>> CheckStakeKernelHash: passed GetKernelStakeModifier\n");
     ss << nStakeModifier;
 
-    ss << nTimeBlockFrom << nTxPrevOffset << txPrev.nTime << prevout.n << nTimeTx;
+    ss << nTimeBlockFrom << nTxPrevOffset << txPrev.nTime << prevout.get_n() << nTimeTx;
     hashProofOfStake = Hash(ss.begin(), ss.end());
     if (fPrintProofOfStake)
     {
@@ -345,7 +345,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
         printf("CheckStakeKernelHash() : check protocol=%s modifier=0x%016" PRI64x " nTimeBlockFrom=%u nTxPrevOffset=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
             "0.3",
             nStakeModifier,
-            nTimeBlockFrom, nTxPrevOffset, txPrev.nTime, prevout.n, nTimeTx,
+            nTimeBlockFrom, nTxPrevOffset, txPrev.nTime, prevout.get_n(), nTimeTx,
             hashProofOfStake.ToString().c_str());
     }
 
@@ -369,7 +369,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
         printf("CheckStakeKernelHash() : pass protocol=%s modifier=0x%016" PRI64x " nTimeBlockFrom=%u nTxPrevOffset=%u nTimeTxPrev=%u nPrevout=%u nTimeTx=%u hashProof=%s\n",
             "0.3",
             nStakeModifier,
-            nTimeBlockFrom, nTxPrevOffset, txPrev.nTime, prevout.n, nTimeTx,
+            nTimeBlockFrom, nTxPrevOffset, txPrev.nTime, prevout.get_n(), nTimeTx,
             hashProofOfStake.ToString().c_str());
     }
     return true;

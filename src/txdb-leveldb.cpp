@@ -214,13 +214,13 @@ bool CTxDB::ReadDiskTx(uint256 hash, CTransaction& tx)
 
 bool CTxDB::ReadDiskTx(COutPoint outpoint, CTransaction& tx, CTxIndex& txindex)
 {
-    return ReadDiskTx(outpoint.hash, tx, txindex);
+    return ReadDiskTx(outpoint.getHash(), tx, txindex);
 }
 
 bool CTxDB::ReadDiskTx(COutPoint outpoint, CTransaction& tx)
 {
     CTxIndex txindex;
-    return ReadDiskTx(outpoint.hash, tx, txindex);
+    return ReadDiskTx(outpoint.getHash(), tx, txindex);
 }
 
 bool CTxDB::WriteBlockIndex(const CDiskBlockIndex& blockindex)
@@ -489,7 +489,7 @@ bool CTxDB::LoadBlockIndex()
                                     {
                                         bool fFound = false;
                                         BOOST_FOREACH(const CTxIn &txin, txSpend.vin)
-                                            if (txin.prevout.hash == hashTx && txin.prevout.n == nOutput)
+                                            if (txin.prevout.getHash() == hashTx && txin.prevout.get_n() == nOutput)
                                                 fFound = true;
                                         if (!fFound)
                                         {
@@ -509,10 +509,10 @@ bool CTxDB::LoadBlockIndex()
                      BOOST_FOREACH(const CTxIn &txin, tx.vin)
                      {
                           CTxIndex txindex;
-                          if (ReadTxIndex(txin.prevout.hash, txindex))
-                              if (txindex.vSpent.size()-1 < txin.prevout.n || txindex.vSpent[txin.prevout.n].IsNull())
+                          if (ReadTxIndex(txin.prevout.getHash(), txindex))
+                              if (txindex.vSpent.size()-1 < txin.prevout.get_n() || txindex.vSpent[txin.prevout.get_n()].IsNull())
                               {
-                                  printf("LoadBlockIndex(): *** found unspent prevout %s:%i in %s\n", txin.prevout.hash.ToString().c_str(), txin.prevout.n, hashTx.ToString().c_str());
+                                  printf("LoadBlockIndex(): *** found unspent prevout %s:%i in %s\n", txin.prevout.getHash().ToString().c_str(), txin.prevout.get_n(), hashTx.ToString().c_str());
                                   pindexFork = pindex->pprev;
                               }
                      }
