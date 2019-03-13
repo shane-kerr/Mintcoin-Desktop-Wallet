@@ -113,16 +113,16 @@ bool CBloomFilter::IsTransactionRelevantToFilter(const CTransaction& tx) const
     BOOST_FOREACH(const CTxIn& txin, tx.vin)
     {
         // Match if the filter contains an outpoint tx spends
-        if (contains(txin.prevout))
+        if (contains(txin.getPrevout()))
             return true;
 
         // Match if the filter contains any arbitrary script data element in any scriptSig in tx
-        CScript::const_iterator pc = txin.scriptSig.begin();
+        CScript::const_iterator pc = txin.getScriptSig().begin();
         vector<unsigned char> data;
-        while (pc < txin.scriptSig.end())
+        while (pc < txin.getScriptSig().end())
         {
             opcodetype opcode;
-            if (!txin.scriptSig.GetOp(pc, opcode, data))
+            if (!txin.getScriptSig().GetOp(pc, opcode, data))
                 break;
             if (data.size() != 0 && contains(data))
                 return true;

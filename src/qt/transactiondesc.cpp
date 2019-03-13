@@ -246,15 +246,15 @@ QString TransactionDesc::toHTML(CWallet *wallet, CWalletTx &wtx)
                 LOCK(wallet->cs_wallet);
                 BOOST_FOREACH(const CTxIn& txin, wtx.vin)
                 {
-                    COutPoint prevout = txin.prevout;
+                    COutPoint prevout = txin.getPrevout();
 
                     CTransaction prev;
-                    if(txdb.ReadDiskTx(prevout.hash, prev))
+                    if(txdb.ReadDiskTx(prevout.getHash(), prev))
                     {
-                        if (prevout.n < prev.vout.size())
+                        if (prevout.get_n() < prev.vout.size())
                         {
                             strHTML += "<li>";
-                            const CTxOut &vout = prev.vout[prevout.n];
+                            const CTxOut &vout = prev.vout[prevout.get_n()];
                             CTxDestination address;
                             if (ExtractDestination(vout.scriptPubKey, address))
                             {

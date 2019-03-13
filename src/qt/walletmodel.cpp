@@ -416,8 +416,8 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
  {
      BOOST_FOREACH(const COutPoint& outpoint, vOutpoints)
      {
-         if (!wallet->mapWallet.count(outpoint.hash)) continue;
-         COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, wallet->mapWallet[outpoint.hash].GetDepthInMainChain());
+         if (!wallet->mapWallet.count(outpoint.getHash())) continue;
+         COutput out(&wallet->mapWallet[outpoint.getHash()], outpoint.get_n(), wallet->mapWallet[outpoint.getHash()].GetDepthInMainChain());
          vOutputs.push_back(out);
      }
  }
@@ -432,8 +432,8 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
      // add locked coins
      BOOST_FOREACH(const COutPoint& outpoint, vLockedCoins)
      {
-         if (!wallet->mapWallet.count(outpoint.hash)) continue;
-         COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, wallet->mapWallet[outpoint.hash].GetDepthInMainChain());
+         if (!wallet->mapWallet.count(outpoint.getHash())) continue;
+         COutput out(&wallet->mapWallet[outpoint.getHash()], outpoint.get_n(), wallet->mapWallet[outpoint.getHash()].GetDepthInMainChain());
          vCoins.push_back(out);
      }
  
@@ -443,8 +443,8 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
  
          while (wallet->IsChange(cout.tx->vout[cout.i]) && cout.tx->vin.size() > 0 && wallet->IsMine(cout.tx->vin[0]))
          {
-             if (!wallet->mapWallet.count(cout.tx->vin[0].prevout.hash)) break;
-             cout = COutput(&wallet->mapWallet[cout.tx->vin[0].prevout.hash], cout.tx->vin[0].prevout.n, 0);
+             if (!wallet->mapWallet.count(cout.tx->vin[0].getPrevout().getHash())) break;
+             cout = COutput(&wallet->mapWallet[cout.tx->vin[0].getPrevout().getHash()], cout.tx->vin[0].getPrevout().get_n(), 0);
          }
  
          CTxDestination address;
