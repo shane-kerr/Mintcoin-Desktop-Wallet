@@ -72,10 +72,10 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
     {
         const CTxOut& txout = tx.vout[i];
         Object out;
-        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
+        out.push_back(Pair("value", ValueFromAmount(txout.get_nValue())));
         out.push_back(Pair("n", (boost::int64_t)i));
         Object o;
-        ScriptPubKeyToJSON(txout.scriptPubKey, o);
+        ScriptPubKeyToJSON(txout.getScriptPubKey(), o);
         out.push_back(Pair("scriptPubKey", o));
         vout.push_back(out);
     }
@@ -182,15 +182,15 @@ Value listunspent(const Array& params, bool fHelp)
         if(setAddress.size())
         {
             CTxDestination address;
-            if(!ExtractDestination(out.tx->vout[out.i].scriptPubKey, address))
+            if(!ExtractDestination(out.tx->vout[out.i].getScriptPubKey(), address))
                 continue;
 
             if (!setAddress.count(address))
                 continue;
         }
 
-        int64 nValue = out.tx->vout[out.i].nValue;
-        const CScript& pk = out.tx->vout[out.i].scriptPubKey;
+        int64 nValue = out.tx->vout[out.i].get_nValue();
+        const CScript& pk = out.tx->vout[out.i].getScriptPubKey();
         Object entry;
         entry.push_back(Pair("txid", out.tx->GetHash().GetHex()));
         entry.push_back(Pair("vout", out.i));
@@ -356,7 +356,7 @@ Value signrawtransaction(const Array& params, bool fHelp)
         {
             const uint256& prevHash = txin.getPrevout().getHash();
             if (mapPrevTx.count(prevHash) && mapPrevTx[prevHash].second.vout.size()>txin.getPrevout().get_n())
-                mapPrevOut[txin.getPrevout()] = mapPrevTx[prevHash].second.vout[txin.getPrevout().get_n()].scriptPubKey;
+                mapPrevOut[txin.getPrevout()] = mapPrevTx[prevHash].second.vout[txin.getPrevout().get_n()].getScriptPubKey();
         }
     }
 

@@ -310,9 +310,9 @@ bool CTransaction::IsStandard() const
             return false;
     }
     BOOST_FOREACH(const CTxOut& txout, vout) {
-        if (!::IsStandard(txout.scriptPubKey))
+        if (!::IsStandard(txout.getScriptPubKey()))
             return false;
-        if (txout.nValue == 0)
+        if (txout.get_nValue() == 0)
             return false;
     }
     return true;
@@ -341,7 +341,7 @@ bool CTransaction::AreInputsStandard(const MapPrevTx& mapInputs) const
         vector<vector<unsigned char> > vSolutions;
         txnouttype whichType;
         // get the scriptPubKey corresponding to this input:
-        const CScript& prevScript = prev.scriptPubKey;
+        const CScript& prevScript = prev.getScriptPubKey();
         if (!Solver(prevScript, whichType, vSolutions))
             return false;
         int nArgsExpected = ScriptSigArgsExpected(whichType, vSolutions);
@@ -393,7 +393,7 @@ CTransaction::GetLegacySigOpCount() const
     }
     BOOST_FOREACH(const CTxOut& txout, vout)
     {
-        nSigOps += txout.scriptPubKey.GetSigOpCount(false);
+        nSigOps += txout.getScriptPubKey().GetSigOpCount(false);
     }
     return nSigOps;
 }
@@ -473,12 +473,12 @@ bool CTransaction::CheckTransaction() const
             return DoS(100, error("CTransaction::CheckTransaction() : txout empty for user transaction"));
 
         // ppcoin: enforce minimum output amount
-        if ((!txout.IsEmpty()) && txout.nValue < MIN_TXOUT_AMOUNT)
+        if ((!txout.IsEmpty()) && txout.get_nValue() < MIN_TXOUT_AMOUNT)
             return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue below minimum"));
 
-        if (txout.nValue > MAX_MONEY)
+        if (txout.get_nValue() > MAX_MONEY)
             return DoS(100, error("CTransaction::CheckTransaction() : txout.nValue too high"));
-        nValueOut += txout.nValue;
+        nValueOut += txout.get_nValue();
         if (!MoneyRange(nValueOut))
             return DoS(100, error("CTransaction::CheckTransaction() : txout total out of range"));
     }
@@ -521,7 +521,7 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
     if (nMinFee < nBaseFee)
     {
         BOOST_FOREACH(const CTxOut& txout, vout)
-            if (txout.nValue < CENT)
+            if (txout.get_nValue() < CENT)
                 nMinFee = nBaseFee;
     }
 
@@ -1317,7 +1317,7 @@ int64 CTransaction::GetValueIn(const MapPrevTx& inputs) const
     int64 nResult = 0;
     for (unsigned int i = 0; i < vin.size(); i++)
     {
-        nResult += GetOutputFor(vin[i], inputs).nValue;
+        nResult += GetOutputFor(vin[i], inputs).get_nValue();
     }
     return nResult;
 
@@ -1333,8 +1333,8 @@ unsigned int CTransaction::GetP2SHSigOpCount(const MapPrevTx& inputs) const
     for (unsigned int i = 0; i < vin.size(); i++)
     {
         const CTxOut& prevout = GetOutputFor(vin[i], inputs);
-        if (prevout.scriptPubKey.IsPayToScriptHash())
-            nSigOps += prevout.scriptPubKey.GetSigOpCount(vin[i].getScriptSig());
+        if (prevout.getScriptPubKey().IsPayToScriptHash())
+            nSigOps += prevout.getScriptPubKey().GetSigOpCount(vin[i].getScriptSig());
     }
     return nSigOps;
 }
@@ -1374,8 +1374,8 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
                 return DoS(100, error("ConnectInputs() : transaction timestamp earlier than input transaction"));
 
             // Check for negative or overflow input values
-            nValueIn += txPrev.vout[prevout.get_n()].nValue;
-            if (!MoneyRange(txPrev.vout[prevout.get_n()].nValue) || !MoneyRange(nValueIn))
+            nValueIn += txPrev.vout[prevout.get_n()].get_nValue();
+            if (!MoneyRange(txPrev.vout[prevout.get_n()].get_nValue()) || !MoneyRange(nValueIn))
                 return DoS(100, error("ConnectInputs() : txin values out of range"));
 
         }
@@ -1482,9 +1482,9 @@ bool CTransaction::ClientConnectInputs()
             // // Flag outpoints as used
             // txPrev.vout[prevout.n].posNext = posThisTx;
 
-            nValueIn += txPrev.vout[prevout.get_n()].nValue;
+            nValueIn += txPrev.vout[prevout.get_n()].get_nValue();
 
-            if (!MoneyRange(txPrev.vout[prevout.get_n()].nValue) || !MoneyRange(nValueIn))
+            if (!MoneyRange(txPrev.vout[prevout.get_n()].get_nValue()) || !MoneyRange(nValueIn))
                 return error("ClientConnectInputs() : txin values out of range");
         }
         if (GetValueOut() > nValueIn)
@@ -1927,7 +1927,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const
         if (block.GetBlockTime() + nStakeMinAge > nTime)
             continue; // only count coins meeting min age requirement
 
-        int64 nValueIn = txPrev.vout[txin.getPrevout().get_n()].nValue;
+        int64 nValueIn = txPrev.vout[txin.getPrevout().get_n()].get_nValue();
         bnCentSecond += CBigNum(nValueIn) * (nTime-txPrev.nTime) / CENT;
 
         if (fDebug && GetBoolArg("-printcoinage"))
@@ -2381,7 +2381,7 @@ bool CBlock::SignBlock(const CKeyStore& keystore)
         {
             const CTxOut& txout = vtx[0].vout[i];
 
-            if (!Solver(txout.scriptPubKey, whichType, vSolutions))
+            if (!Solver(txout.getScriptPubKey(), whichType, vSolutions))
                 continue;
 
             if (whichType == TX_PUBKEY)
@@ -2405,7 +2405,7 @@ bool CBlock::SignBlock(const CKeyStore& keystore)
     {
         const CTxOut& txout = vtx[1].vout[1];
 
-        if (!Solver(txout.scriptPubKey, whichType, vSolutions))
+        if (!Solver(txout.getScriptPubKey(), whichType, vSolutions))
             return false;
 
         if (whichType == TX_PUBKEY)
@@ -2440,7 +2440,7 @@ bool CBlock::CheckBlockSignature() const
     {
         const CTxOut& txout = vtx[1].vout[1];
 
-        if (!Solver(txout.scriptPubKey, whichType, vSolutions))
+        if (!Solver(txout.getScriptPubKey(), whichType, vSolutions))
             return false;
         if (whichType == TX_PUBKEY)
         {
@@ -2459,7 +2459,7 @@ bool CBlock::CheckBlockSignature() const
         {
             const CTxOut& txout = vtx[0].vout[i];
 
-            if (!Solver(txout.scriptPubKey, whichType, vSolutions))
+            if (!Solver(txout.getScriptPubKey(), whichType, vSolutions))
                 return false;
 
             if (whichType == TX_PUBKEY)
@@ -3933,7 +3933,9 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     //txNew.vin[0].prevout.SetNull();
 
     txNew.vout.resize(1);
-    txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+    CScript tmpScriptPubKey;
+    tmpScriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+    txNew.vout[0].setScriptPubKey(tmpScriptPubKey);
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
@@ -4044,10 +4046,10 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                     }
                     mapDependers[txin.getPrevout().getHash()].push_back(porphan);
                     porphan->setDependsOn.insert(txin.getPrevout().getHash());
-                    nTotalIn += mempool.mapTx[txin.getPrevout().getHash()].vout[txin.getPrevout().get_n()].nValue;
+                    nTotalIn += mempool.mapTx[txin.getPrevout().getHash()].vout[txin.getPrevout().get_n()].get_nValue();
                     continue;
                 }
-                int64 nValueIn = txPrev.vout[txin.getPrevout().get_n()].nValue;
+                int64 nValueIn = txPrev.vout[txin.getPrevout().get_n()].get_nValue();
                 nTotalIn += nValueIn;
 
                 int nConf = txindex.GetDepthInMainChain();
@@ -4184,7 +4186,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
             printf("CreateNewBlock(): total size %" PRI64u "\n", nBlockSize);
 
         if (pblock->IsProofOfWork())
-            pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(pindexPrev->nHeight+1, nFees, pindexPrev->GetBlockHash());
+            pblock->vtx[0].vout[0].set_nValue(GetProofOfWorkReward(pindexPrev->nHeight+1, nFees, pindexPrev->GetBlockHash()));
 
         // Fill in header
         pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
@@ -4279,7 +4281,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     printf("BitcoinMiner:\n");
     printf("new block found  \n  hash: %s  \ntarget: %s\n", hash.GetHex().c_str(), hashTarget.GetHex().c_str());
     pblock->print();
-    printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
+    printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].get_nValue()).c_str());
 
     // Found a solution
     {

@@ -1718,7 +1718,7 @@ bool SignSignature(const CKeyStore &keystore, const CTransaction& txFrom, CTrans
     assert(txin.getPrevout().getHash() == txFrom.GetHash());
     const CTxOut& txout = txFrom.vout[txin.getPrevout().get_n()];
 
-    return SignSignature(keystore, txout.scriptPubKey, txTo, nIn, nHashType);
+    return SignSignature(keystore, txout.getScriptPubKey(), txTo, nIn, nHashType);
 }
 
 bool VerifySignature(const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, bool fValidatePayToScriptHash, bool fStrictEncodings, int nHashType)
@@ -1732,7 +1732,7 @@ bool VerifySignature(const CTransaction& txFrom, const CTransaction& txTo, unsig
     if (txin.getPrevout().getHash() != txFrom.GetHash())
         return false;
 
-    return VerifyScript(txin.getScriptSig(), txout.scriptPubKey, txTo, nIn, fValidatePayToScriptHash, fStrictEncodings, nHashType);
+    return VerifyScript(txin.getScriptSig(), txout.getScriptPubKey(), txTo, nIn, fValidatePayToScriptHash, fStrictEncodings, nHashType);
 }
 
 static CScript PushAll(const vector<valtype>& values)

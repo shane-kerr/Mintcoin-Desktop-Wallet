@@ -176,7 +176,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
     wallet->AvailableCoins(vCoins, true, coinControl);
 
     BOOST_FOREACH(const COutput& out, vCoins)
-        nBalance += out.tx->vout[out.i].nValue;
+        nBalance += out.tx->vout[out.i].get_nValue();
      if(total > nBalance)
     {
         return AmountExceedsBalance;
@@ -448,7 +448,7 @@ void WalletModel::UnlockContext::CopyFrom(const UnlockContext& rhs)
          }
  
          CTxDestination address;
-         if(!ExtractDestination(cout.tx->vout[cout.i].scriptPubKey, address)) continue;
+         if(!ExtractDestination(cout.tx->vout[cout.i].getScriptPubKey(), address)) continue;
          mapCoins[CBitcoinAddress(address).ToString().c_str()].push_back(out);
      }
  }

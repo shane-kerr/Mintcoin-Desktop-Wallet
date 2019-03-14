@@ -98,12 +98,12 @@ bool CBloomFilter::IsTransactionRelevantToFilter(const CTransaction& tx) const
     BOOST_FOREACH(const CTxOut& txout, tx.vout)
     {
         // Match if the filter contains any arbitrary script data element in any scriptPubKey in tx
-        CScript::const_iterator pc = txout.scriptPubKey.begin();
+        CScript::const_iterator pc = txout.getScriptPubKey().begin();
         vector<unsigned char> data;
-        while (pc < txout.scriptPubKey.end())
+        while (pc < txout.getScriptPubKey().end())
         {
             opcodetype opcode;
-            if (!txout.scriptPubKey.GetOp(pc, opcode, data))
+            if (!txout.getScriptPubKey().GetOp(pc, opcode, data))
                 break;
             if (data.size() != 0 && contains(data))
                 return true;

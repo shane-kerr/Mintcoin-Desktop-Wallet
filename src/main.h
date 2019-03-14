@@ -362,10 +362,11 @@ public:
  */
 class CTxOut
 {
-public:
+private:
     int64 nValue;
     CScript scriptPubKey;
 
+public:
     CTxOut()
     {
         SetNull();
@@ -375,6 +376,15 @@ public:
     {
         nValue = nValueIn;
         scriptPubKey = scriptPubKeyIn;
+    }
+
+    int64 get_nValue() const { return nValue; }
+    const CScript& getScriptPubKey() const { return scriptPubKey; }
+
+    void set_nValue(int64 new_nValue) { nValue = new_nValue; }
+    void setScriptPubKey(const CScript& newScriptPubKey)
+    {
+        scriptPubKey = newScriptPubKey;
     }
 
     IMPLEMENT_SERIALIZE
@@ -389,7 +399,7 @@ public:
         scriptPubKey.clear();
     }
 
-    bool IsNull()
+    bool IsNull() const
     {
         return (nValue == -1);
     }
@@ -602,8 +612,8 @@ public:
         int64 nValueOut = 0;
         BOOST_FOREACH(const CTxOut& txout, vout)
         {
-            nValueOut += txout.nValue;
-            if (!MoneyRange(txout.nValue) || !MoneyRange(nValueOut))
+            nValueOut += txout.get_nValue();
+            if (!MoneyRange(txout.get_nValue()) || !MoneyRange(nValueOut))
                 throw std::runtime_error("CTransaction::GetValueOut() : value out of range");
         }
         return nValueOut;
