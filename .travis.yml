@@ -15,7 +15,7 @@ matrix:
   - name: mintcoind 20.04
     os: linux
     dist: focal
-    virt: vm
+    virt: lxd
     addons:
       apt:
         packages:
@@ -60,7 +60,7 @@ matrix:
   - name: mintcoind win32
     os: linux
     dist: focal
-    virt: lxd
+    virt: vm
     script: bash src/mxe-build.sh windows32
 
   # Build mintcoind
@@ -68,13 +68,43 @@ matrix:
   - name: mintcoind win64
     os: linux
     dist: focal
-    virt: lxd
+    virt: vm
     script: bash src/mxe-build.sh windows64
+
+  # Build mintcoind
+  # Ubuntu 18.04 LTS (Bionic Beaver)
+  # Make a 32-bit version using Debian multiarch
+  - name: mintcoind 18.04 (32-bit)
+    os: linux
+    dist: bionic
+    virt: lxd
+    # To support 32-bit builds, we add the i386 architecture to
+    # Ubuntu, and then install 32-bit versions of the compiler and
+    # libraries needed. For details of Debian multiarch see the wiki:
+    #
+    # https://wiki.debian.org/Multiarch
+    #
+    # Even with multiarch support, we have to do a bit of a dance.
+    #
+    # apt-get does not seem to understand dependencies for the
+    # multiarch stuff, so we have to explicitly install all of the
+    # dependencies.
+    before_script:
+        - sudo dpkg --add-architecture i386
+        - sudo apt-get update
+        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
+        - sudo apt-get install -y libssl-dev:i386
+        - sudo apt-get install -y libdb++-dev:i386
+        - sudo apt-get install -y libminiupnpc-dev:i386
+        - sudo apt-get install -y openmpi-common:i386
+        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
+    script: cd src && make -f makefile.unix -j2
 
   # Build mintcoind
   # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
-  - os: linux
+  - name: mintcoind 16.04 (32-bit)
+   os: linux
     dist: xenial
     virt: lxd
     # To support 32-bit builds, we add the i386 architecture to
@@ -101,7 +131,8 @@ matrix:
 
   # Build mintcoind static
   # Ubuntu 20.04 LTS (Focal Fossa)
-  - os: linux
+  - name: mintcoind 20.04 (static)
+    os: linux
     dist: focal
     virt: vm
     addons:
@@ -115,7 +146,8 @@ matrix:
 
   # Build mintcoind static
   # Ubuntu 18.04 LTS (Bionic Beaver)
-  - os: linux
+  - name: mintcoind 18.04 (static)
+    os: linux
     dist: bionic
     virt: lxd
     addons:
@@ -129,7 +161,8 @@ matrix:
 
   # Build mintcoind static
   # Ubuntu 16.04 LTS (Xenial Xerus)
-  - os: linux
+  - name: mintcoind 16.04 (static)
+    os: linux
     dist: xenial
     virt: lxd
     addons:
@@ -171,25 +204,29 @@ matrix:
 
   # Build mintcoind
   # macOS 10.14 (Mojave)
-  - os: osx
+  - name: mintcoind macOS 10.14
+    os: osx
     osx_image: xcode11.3
     script: cd src && make -f makefile.osx -j2
 
   # Build mintcoind static
   # macOS 10.14 (Mojave)
-  - os: osx
+  - name: mintcoind macOS 10.14 (static)
+    os: osx
     osx_image: xcode11.3
     script: cd src && make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
 
   # Build mintcoind
   # macOS 10.15 (Catalina)
-  - os: osx
+  - name: mintcoind macOS 10.15
+    os: osx
     osx_image: xcode12.2
     script: cd src && make -f makefile.osx -j2
 
   # Build mintcoind static
   # macOS 10.15 (Catalina)
-  - os: osx
+  - name: mintcoind macOS 10.15 (static)
+    os: osx
     osx_image: xcode12.2
     script: cd src && make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
 
