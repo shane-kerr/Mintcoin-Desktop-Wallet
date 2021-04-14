@@ -12,7 +12,7 @@ matrix:
   include:
   # Build mintcoind
   # Ubuntu 20.04 LTS (Focal Fossa)
-  - name: mintcoind 20.04
+  - name: mintcoind Ubuntu 20.04
     os: linux
     dist: focal
     virt: lxd
@@ -27,7 +27,7 @@ matrix:
 
   # Build mintcoind
   # Ubuntu 18.04 LTS (Bionic Beaver)
-  - name: mintcoind 18.04
+  - name: mintcoind Ubuntu 18.04
     os: linux
     dist: bionic
     virt: lxd
@@ -42,7 +42,7 @@ matrix:
 
   # Build mintcoind
   # Ubuntu 16.04 LTS (Xenial Xerus)
-  - name: mintcoind 16.04
+  - name: mintcoind Ubuntu 16.04
     os: linux
     dist: xenial
     virt: lxd
@@ -74,7 +74,7 @@ matrix:
   # Build mintcoind
   # Ubuntu 18.04 LTS (Bionic Beaver)
   # Make a 32-bit version using Debian multiarch
-  - name: mintcoind 18.04 (32-bit)
+  - name: mintcoind Ubuntu 18.04 (32-bit)
     os: linux
     dist: bionic
     virt: lxd
@@ -97,13 +97,13 @@ matrix:
         - sudo apt-get install -y libdb++-dev:i386
         - sudo apt-get install -y libminiupnpc-dev:i386
         - sudo apt-get install -y openmpi-common:i386
-        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
+        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 python:i386
     script: cd src && make -f makefile.unix -j2
 
   # Build mintcoind
   # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
-  - name: mintcoind 16.04 (32-bit)
+  - name: mintcoind Ubuntu 16.04 (32-bit)
     os: linux
     dist: xenial
     virt: lxd
@@ -131,7 +131,7 @@ matrix:
 
   # Build mintcoind static
   # Ubuntu 20.04 LTS (Focal Fossa)
-  - name: mintcoind 20.04 (static)
+  - name: mintcoind Ubuntu 20.04 (static)
     os: linux
     dist: focal
     virt: vm
@@ -146,7 +146,7 @@ matrix:
 
   # Build mintcoind static
   # Ubuntu 18.04 LTS (Bionic Beaver)
-  - name: mintcoind 18.04 (static)
+  - name: mintcoind Ubuntu 18.04 (static)
     os: linux
     dist: bionic
     virt: lxd
@@ -161,7 +161,7 @@ matrix:
 
   # Build mintcoind static
   # Ubuntu 16.04 LTS (Xenial Xerus)
-  - name: mintcoind 16.04 (static)
+  - name: mintcoind Ubuntu 16.04 (static)
     os: linux
     dist: xenial
     virt: lxd
@@ -231,8 +231,43 @@ matrix:
     script: cd src && make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
 
   # Build MintCoin-Qt
+  # Ubuntu 20.04 LTS (Focal Fossa)
+  - name: MintCoin-Qt Ubuntu 20.04
+    os: linux
+    dist: focal
+    virt: lxd
+    addons:
+      apt:
+        packages:
+          - libdb++-dev
+          - libboost-all-dev
+          - libqrencode-dev
+          - libminiupnpc-dev
+          - qt4-qmake
+          - libqt4-dev
+    script: qmake && make -j2
+
+  # Build MintCoin-Qt
+  # Ubuntu 18.04 LTS (Bionic Beaver)
+  - name: MintCoin-Qt Ubuntu 18.04
+    os: linux
+    dist: bionic
+    virt: lxd
+    addons:
+      apt:
+        packages:
+          - libdb++-dev
+          - libboost-all-dev
+          - libqrencode-dev
+          - libminiupnpc-dev
+          - qt4-qmake
+          - libqt4-dev
+    script: qmake && make -j2
+
+  # Build MintCoin-Qt
   # Ubuntu 16.04 LTS (Xenial Xerus)
-  - os: linux
+  - name: MintCoin-Qt Ubuntu 16.04
+    os: linux
     dist: xenial
     virt: lxd
     addons:
@@ -249,7 +284,8 @@ matrix:
   # Build MintCoin-Qt
   # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
-  - os: linux
+  - name: MintCoin-Qt Ubuntu 16.04 (32-bit)
+    os: linux
     dist: xenial
     virt: lxd
     # To support 32-bit builds, we add the i386 architecture to
@@ -281,14 +317,16 @@ matrix:
 
   # Build MintCoin-Qt
   # Cross-compile Windows 32-bit GUI
-  - os: linux
+  - name: MintCoin-Qt win32
+    os: linux
     dist: focal
     virt: vm
     script: bash src/mxe-build.sh windows32-qt
 
   # Build MintCoin-Qt
   # Cross-compile Windows 64-bit GUI
-  - os: linux
+  - name: MintCoin-Qt win64
+    os: linux
     dist: focal
     virt: vm
     script: bash src/mxe-build.sh windows64-qt
