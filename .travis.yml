@@ -104,7 +104,7 @@ matrix:
   # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
   - name: mintcoind 16.04 (32-bit)
-   os: linux
+    os: linux
     dist: xenial
     virt: lxd
     # To support 32-bit builds, we add the i386 architecture to
