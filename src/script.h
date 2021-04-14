@@ -302,6 +302,7 @@ public:
     explicit CScript(const CBigNum& b) { operator<<(b); }
     explicit CScript(const std::vector<unsigned char>& b) { operator<<(b); }
 
+    CScript& operator=(const CScript& b) = default;
 
     //CScript& operator<<(char b) is not portable.  Use 'signed char' or 'unsigned char'.
     CScript& operator<<(signed char b)    { return push_int64(b); }
