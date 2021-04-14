@@ -14,6 +14,20 @@ matrix:
   # Ubuntu 20.04 LTS (Focal Fossa)
   - os: linux
     dist: focal
+    virt: vm
+    addons:
+      apt:
+        packages:
+          - libdb++-dev
+          - libboost-all-dev
+          - libqrencode-dev
+          - libminiupnpc-dev
+    script: cd src && make -f makefile.unix -j2
+
+  # Build mintcoind
+  # Ubuntu 18.04 LTS (Bionic Beaver)
+  - os: linux
+    dist: bionic
     virt: lxd
     addons:
       apt:
@@ -25,9 +39,10 @@ matrix:
     script: cd src && make -f makefile.unix -j2
 
   # Build mintcoind
-  # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
+  # Ubuntu 16.04 LTS (Xenial Xerus)
   - os: linux
     dist: xenial
+    virt: lxd
     addons:
       apt:
         packages:
@@ -40,20 +55,23 @@ matrix:
   # Build mintcoind
   # Cross-compile Windows 32-bit daemon
   - os: linux
-    dist: xenial
+    dist: focal
+    virt: lxd
     script: bash src/mxe-build.sh windows32
 
   # Build mintcoind
   # Cross-compile Windows 64-bit daemon
   - os: linux
-    dist: xenial
+    dist: focal
+    virt: lxd
     script: bash src/mxe-build.sh windows64
 
   # Build mintcoind
-  # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
+  # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
   - os: linux
     dist: xenial
+    virt: lxd
     # To support 32-bit builds, we add the i386 architecture to
     # Ubuntu, and then install 32-bit versions of the compiler and
     # libraries needed. For details of Debian multiarch see the wiki:
@@ -77,9 +95,10 @@ matrix:
     script: cd src && make -f makefile.unix -j2
 
   # Build mintcoind static
-  # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
+  # Ubuntu 20.04 LTS (Focal Fossa)
   - os: linux
-    dist: xenial
+    dist: focal
+    virt: vm
     addons:
       apt:
         packages:
@@ -90,10 +109,39 @@ matrix:
     script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
 
   # Build mintcoind static
-  # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
+  # Ubuntu 18.04 LTS (Bionic Beaver)
+  - os: linux
+    dist: bionic
+    virt: lxd
+    addons:
+      apt:
+        packages:
+          - libdb++-dev
+          - libboost-all-dev
+          - libqrencode-dev
+          - libminiupnpc-dev
+    script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+
+  # Build mintcoind static
+  # Ubuntu 16.04 LTS (Xenial Xerus)
+  - os: linux
+    dist: xenial
+    virt: lxd
+    addons:
+      apt:
+        packages:
+          - libdb++-dev
+          - libboost-all-dev
+          - libqrencode-dev
+          - libminiupnpc-dev
+    script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+
+  # Build mintcoind static
+  # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
   - os: linux
     dist: xenial
+    virt: lxd
     # To support 32-bit builds, we add the i386 architecture to
     # Ubuntu, and then install 32-bit versions of the compiler and
     # libraries needed. For details of Debian multiarch see the wiki:
@@ -141,9 +189,10 @@ matrix:
     script: cd src && make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
 
   # Build MintCoin-Qt
-  # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
+  # Ubuntu 16.04 LTS (Xenial Xerus)
   - os: linux
     dist: xenial
+    virt: lxd
     addons:
       apt:
         packages:
@@ -156,10 +205,11 @@ matrix:
     script: qmake && make -j2
 
   # Build MintCoin-Qt
-  # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
+  # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
   - os: linux
     dist: xenial
+    virt: lxd
     # To support 32-bit builds, we add the i386 architecture to
     # Ubuntu, and then install 32-bit versions of the compiler and
     # libraries needed. For details of Debian multiarch see the wiki:
@@ -190,20 +240,22 @@ matrix:
   # Build MintCoin-Qt
   # Cross-compile Windows 32-bit GUI
   - os: linux
-    dist: xenial
+    dist: focal
+    virt: vm
     script: bash src/mxe-build.sh windows32-qt
 
   # Build MintCoin-Qt
   # Cross-compile Windows 64-bit GUI
   - os: linux
-    dist: xenial
+    dist: focal
+    virt: vm
     script: bash src/mxe-build.sh windows64-qt
 
   # Build MintCoin-Qt
   # macOS 10.13 (High Sierra)
   #- os: osx
   #  osx_image: xcode10.1
-  #  script: brew install qrencode qt && /usr/local/opt/qt/bin/qmake && make -j2 
+  #  script: brew install qrencode qt && /usr/local/opt/qt/bin/qmake && make -j2
 
   # Build MintCoin-Qt
   # macOS 10.14 (Mojave)
