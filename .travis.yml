@@ -12,7 +12,8 @@ matrix:
   include:
   # Build mintcoind
   # Ubuntu 20.04 LTS (Focal Fossa)
-  - os: linux
+  - name: mintcoind 20.04
+    os: linux
     dist: focal
     virt: vm
     addons:
@@ -26,7 +27,8 @@ matrix:
 
   # Build mintcoind
   # Ubuntu 18.04 LTS (Bionic Beaver)
-  - os: linux
+  - name: mintcoind 18.04
+    os: linux
     dist: bionic
     virt: lxd
     addons:
@@ -40,7 +42,8 @@ matrix:
 
   # Build mintcoind
   # Ubuntu 16.04 LTS (Xenial Xerus)
-  - os: linux
+  - name: mintcoind 16.04
+    os: linux
     dist: xenial
     virt: lxd
     addons:
@@ -54,14 +57,16 @@ matrix:
 
   # Build mintcoind
   # Cross-compile Windows 32-bit daemon
-  - os: linux
+  - name: mintcoind win32
+    os: linux
     dist: focal
     virt: lxd
     script: bash src/mxe-build.sh windows32
 
   # Build mintcoind
   # Cross-compile Windows 64-bit daemon
-  - os: linux
+  - name: mintcoind win64
+    os: linux
     dist: focal
     virt: lxd
     script: bash src/mxe-build.sh windows64
