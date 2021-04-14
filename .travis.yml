@@ -11,10 +11,23 @@ install:
 matrix:
   include:
   # Build mintcoind
+  # Ubuntu 20.04 LTS (Focal Fossa)
+  - os: linux
+    dist: focal
+    virt: lxd
+    addons:
+      apt:
+        packages:
+          - libdb++-dev
+          - libboost-all-dev
+          - libqrencode-dev
+          - libminiupnpc-dev
+    script: cd src && make -f makefile.unix -j2
+
+  # Build mintcoind
   # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
   - os: linux
     dist: xenial
-    sudo: required
     addons:
       apt:
         packages:
@@ -28,14 +41,12 @@ matrix:
   # Cross-compile Windows 32-bit daemon
   - os: linux
     dist: xenial
-    sudo: required
     script: bash src/mxe-build.sh windows32
 
   # Build mintcoind
   # Cross-compile Windows 64-bit daemon
   - os: linux
     dist: xenial
-    sudo: required
     script: bash src/mxe-build.sh windows64
 
   # Build mintcoind
@@ -43,7 +54,6 @@ matrix:
   # Make a 32-bit version using Debian multiarch
   - os: linux
     dist: xenial
-    sudo: required
     # To support 32-bit builds, we add the i386 architecture to
     # Ubuntu, and then install 32-bit versions of the compiler and
     # libraries needed. For details of Debian multiarch see the wiki:
@@ -70,7 +80,6 @@ matrix:
   # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
   - os: linux
     dist: xenial
-    sudo: required
     addons:
       apt:
         packages:
@@ -85,7 +94,6 @@ matrix:
   # Make a 32-bit version using Debian multiarch
   - os: linux
     dist: xenial
-    sudo: required
     # To support 32-bit builds, we add the i386 architecture to
     # Ubuntu, and then install 32-bit versions of the compiler and
     # libraries needed. For details of Debian multiarch see the wiki:
@@ -109,34 +117,33 @@ matrix:
     script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
 
   # Build mintcoind
-  # macOS 10.13 (High Sierra)
+  # macOS 10.14 (Mojave)
   - os: osx
-    osx_image: xcode10.1
+    osx_image: xcode11.3
     script: cd src && make -f makefile.osx -j2
 
   # Build mintcoind static
-  # macOS 10.13 (High Sierra)
+  # macOS 10.14 (Mojave)
   - os: osx
-    osx_image: xcode10.1
+    osx_image: xcode11.3
     script: cd src && make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
 
   # Build mintcoind
-  # macOS 10.14 (Mojave)
+  # macOS 10.15 (Catalina)
   - os: osx
-    osx_image: xcode10.2
+    osx_image: xcode12.2
     script: cd src && make -f makefile.osx -j2
 
   # Build mintcoind static
-  # macOS 10.14 (Mojave)
+  # macOS 10.15 (Catalina)
   - os: osx
-    osx_image: xcode10.2
+    osx_image: xcode12.2
     script: cd src && make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
 
   # Build MintCoin-Qt
   # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
   - os: linux
     dist: xenial
-    sudo: required
     addons:
       apt:
         packages:
@@ -153,7 +160,6 @@ matrix:
   # Make a 32-bit version using Debian multiarch
   - os: linux
     dist: xenial
-    sudo: required
     # To support 32-bit builds, we add the i386 architecture to
     # Ubuntu, and then install 32-bit versions of the compiler and
     # libraries needed. For details of Debian multiarch see the wiki:
@@ -185,14 +191,12 @@ matrix:
   # Cross-compile Windows 32-bit GUI
   - os: linux
     dist: xenial
-    sudo: required
     script: bash src/mxe-build.sh windows32-qt
 
   # Build MintCoin-Qt
   # Cross-compile Windows 64-bit GUI
   - os: linux
     dist: xenial
-    sudo: required
     script: bash src/mxe-build.sh windows64-qt
 
   # Build MintCoin-Qt
