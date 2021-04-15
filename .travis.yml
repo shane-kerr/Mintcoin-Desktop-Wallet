@@ -98,7 +98,7 @@ matrix:
         - sudo apt install -y openmpi-common:i386
         - sudo apt install -y libboost-graph-parallel-dev:i386
         - sudo apt install -y libboost-mpi1.71-dev:i386
-        - sudo apt install -y python3:i386 libpython3-stdlib:i386 python3-dev:i386 python3-distutils:i386
+        - sudo apt install -y python3:i386 libpython3-stdlib:i386 python3-dev:i386 python3-distutils:i386 libpython3.8-stdlib:i386 python3.8:i386
         - sudo apt install -y libboost-mpi-python1.71.0:i386
         - sudo apt install -y libboost-mpi-python1.71-dev:i386
         - sudo apt install -y libboost-python1.71-dev:i386
@@ -137,6 +137,7 @@ matrix:
         - sudo apt install -y pkg-config:i386
         - sudo apt install -y libboost-iostreams-dev:i386
         - sudo apt install -y libharfbuzz-dev:i386 libicu-le-hb-dev:i386
+        - sudo apt install -y libglib2.0-dev-bin:i386 ibglib2.0-dev:i386
         - sudo apt install -y python:i386 python3:i386
         - sudo apt install -y libboost-mpi-python1.65.1:i386 libboost-mpi-python1.65-dev:i386
         - sudo apt install -y libboost-python1.65-dev:i386
