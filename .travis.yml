@@ -92,7 +92,7 @@ matrix:
     before_script:
         - sudo dpkg --add-architecture i386
         - sudo apt update
-        - sudo apt install -y g++:i386 cpp:i386 gcc:i386 binutils:i386
+        - sudo apt -o APT::Immediate-Configure=0 install -y g++:i386 cpp:i386 gcc:i386 binutils:i386
         - sudo apt install -y libssl-dev:i386
         - sudo apt install -y libdb++-dev:i386
         - sudo apt install -y libminiupnpc-dev:i386
@@ -126,6 +126,7 @@ matrix:
         - sudo apt install -y libdb++-dev:i386
         - sudo apt install -y libminiupnpc-dev:i386
         - sudo apt install -y openmpi-common:i386
+        - sudo apt install -y libboost-iostreams-dev:i386
         - sudo apt install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 python:i386
     script: cd src && make -f makefile.unix -j2
 
