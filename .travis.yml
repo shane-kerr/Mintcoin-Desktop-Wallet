@@ -244,8 +244,8 @@ matrix:
           - libboost-all-dev
           - libqrencode-dev
           - libminiupnpc-dev
-    before_install: add-apt-repository ppa:gezakovacs/ppa && apt update
-    install: apt install qt4-qmake libqt4-dev
+    before_install: sudo add-apt-repository ppa:gezakovacs/ppa && apt update
+    install: sudo apt install qt4-qmake libqt4-dev
     script: qmake && make -j2
 
   # Build MintCoin-Qt
