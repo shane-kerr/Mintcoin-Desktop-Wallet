@@ -77,7 +77,7 @@ matrix:
   - name: mintcoind Ubuntu 20.04 (32-bit)
     os: linux
     dist: focal
-    virt: lxd
+    virt: vm
     before_script:
       - docker pull i386/ubuntu:focal
     script:
@@ -98,7 +98,7 @@ matrix:
   - name: mintcoind Ubuntu 18.04 (32-bit)
     os: linux
     dist: bionic
-    virt: lxd
+    virt: vm
     before_script:
       - docker pull i386/ubuntu:bionic
     script:
@@ -147,7 +147,7 @@ matrix:
   - name: mintcoind Ubuntu 20.04 (static)
     os: linux
     dist: focal
-    virt: vm
+    virt: lxd
     addons:
       apt:
         packages:
