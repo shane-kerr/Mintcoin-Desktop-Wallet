@@ -81,10 +81,10 @@ matrix:
     before_script:
       - docker pull i386/ubuntu:focal
     script: 
-      - docker run --detach --name=mintcoin i386/ubuntu:focal sleep 3600
+      - docker run --detach --security-opt seccomp=unconfined --name=mintcoin i386/ubuntu:focal sleep 3600
       - docker exec mintcoin apt update
       # - docker exec mintcoin apt upgrade -y
-      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true --security-opt seccomp=unconfined mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
       - docker cp share mintcoin:root/.
       - docker cp src mintcoin:root/.
       - docker exec mintcoin bash -c "cd root/src && CFLAGS=-m32 make -f makefile.unix -j2"
