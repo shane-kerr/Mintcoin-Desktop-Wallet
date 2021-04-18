@@ -188,6 +188,48 @@ matrix:
     script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
 
   # Build mintcoind static
+  # Ubuntu 20.04 LTS (Focal Fossa)
+  # Make a 32-bit version using Docker
+  - name: mintcoind Ubuntu 20.04 (32-bit static)
+    os: linux
+    dist: focal
+    virt: vm
+    before_script:
+      - docker pull i386/ubuntu:focal
+    script:
+      - docker run --detach --security-opt seccomp=unconfined --name=mintcoin i386/ubuntu:focal sleep 3600
+      - docker exec mintcoin apt update
+      # - docker exec mintcoin apt upgrade -y
+      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+      - docker cp share mintcoin:root/.
+      - docker cp src mintcoin:root/.
+      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 CFLAGS=-m32 make -f makefile.unix -j2 STATIC='all' LDFLAGS='-static'"
+    after_script:
+      - docker stop mintcoin
+      - docker rm mintcoin
+
+  # Build mintcoind
+  # Ubuntu 18.04 LTS (Bionic Beaver)
+  # Make a 32-bit version using Docker
+  - name: mintcoind Ubuntu 18.04 (32-bit static)
+    os: linux
+    dist: bionic
+    virt: vm
+    before_script:
+      - docker pull i386/ubuntu:bionic
+    script:
+      - docker run --detach --name=mintcoin i386/ubuntu:bionic sleep 3600
+      - docker exec mintcoin apt update
+      # - docker exec mintcoin apt upgrade -y
+      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+      - docker cp share mintcoin:root/.
+      - docker cp src mintcoin:root/.
+      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 CFLAGS=-m32 make -f makefile.unix -j2 STATIC='all' LDFLAGS='-static'"
+    after_script:
+      - docker stop mintcoin
+      - docker rm mintcoin
+
+  # Build mintcoind static
   # Ubuntu 16.04 LTS (Xenial Xerus)
   # Make a 32-bit version using Debian multiarch
   - name: mintcoind Ubuntu 16.04 (32-bit static)
