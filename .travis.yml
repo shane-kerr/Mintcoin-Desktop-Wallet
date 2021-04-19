@@ -5,7 +5,7 @@ install:
   # Travis already has OpenSSL and Boost installed via Homebrew, but we
   # need to add a couple more packages
   - if [ $TRAVIS_OS_NAME = osx ]; then
-      #brew upgrade;
+      brew upgrade;
       brew install miniupnpc berkeley-db@4 make;
     fi
 
