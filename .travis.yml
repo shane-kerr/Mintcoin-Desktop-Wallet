@@ -14,342 +14,343 @@ matrix:
   - name: MintCoin-Qt macOS 10.14
     os: osx
     osx_image: xcode11.3
-    script:
-      - export MACOSX_DEPLOYMENT_TARGET=10.14
-      - open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg
-      - sudo xcode-select --switch /Library/Developer/CommandLineTools
-      - brew install qrencode qt
-      - QMAKE_CXX="ccache c++" /usr/local/opt/qt/bin/qmake
-      - CXX="ccache c++" gmake -j2
+    script: export MACOSX_DEPLOYMENT_TARGET=10.14 && open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg && sudo xcode-select --switch /Library/Developer/CommandLineTools/ && brew install qrencode qt && QMAKE_CXX="ccache c++" /usr/local/opt/qt/bin/qmake && CXX="ccache c++" gmake -j2
+    #script:
+    #  - export MACOSX_DEPLOYMENT_TARGET=10.14
+    #  - open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg
+    #  - sudo xcode-select --switch /Library/Developer/CommandLineTools
+    #  - brew install qrencode qt
+    #  - QMAKE_CXX="ccache c++" /usr/local/opt/qt/bin/qmake
+    #  - CXX="ccache c++" gmake -j2
 
-  - name: mintcoind Ubuntu 20.04
-    os: linux
-    dist: focal
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    script: cd src && CXX="ccache c++" make -f makefile.unix -j2
-
-  - name: mintcoind Ubuntu 18.04
-    os: linux
-    dist: bionic
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    script: cd src && CXX="ccache c++" make -f makefile.unix -j2
-
-  - name: mintcoind Ubuntu 16.04
-    os: linux
-    dist: xenial
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    script: cd src && CXX="ccache c++" make -f makefile.unix -j2
-
-  - name: mintcoind win32
-    os: linux
-    dist: focal
-    virt: vm
-    script: bash src/mxe-build.sh windows32
-
-  # Doesn't actually run, so don't bother to build
-  #- name: mintcoind win64
-  #  os: linux
-  #  dist: focal
-  #  virt: vm
-  #  script: bash src/mxe-build.sh windows64
-
-  - name: mintcoind Ubuntu 20.04 (32-bit)
-    os: linux
-    dist: focal
-    virt: vm
-    before_script:
-      - docker pull i386/ubuntu:focal
-    script:
-      - docker run --detach --security-opt seccomp=unconfined --name=mintcoin i386/ubuntu:focal sleep 3600
-      - docker exec mintcoin apt update
-      # - docker exec mintcoin apt upgrade -y
-      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
-      - docker cp share mintcoin:root/.
-      - docker cp src mintcoin:root/.
-      - docker exec mintcoin bash -c "cd root/src && CFLAGS=-m32 make -f makefile.unix -j2"
-    after_script:
-      - docker stop mintcoin
-      - docker rm mintcoin
-
-  - name: mintcoind Ubuntu 18.04 (32-bit)
-    os: linux
-    dist: bionic
-    virt: vm
-    before_script:
-      - docker pull i386/ubuntu:bionic
-    script:
-      - docker run --detach --name=mintcoin i386/ubuntu:bionic sleep 3600
-      - docker exec mintcoin apt update
-      # - docker exec mintcoin apt upgrade -y
-      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
-      - docker cp share mintcoin:root/.
-      - docker cp src mintcoin:root/.
-      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 make -f makefile.unix -j2"
-    after_script:
-      - docker stop mintcoin
-      - docker rm mintcoin
-
-  - name: mintcoind Ubuntu 16.04 (32-bit)
-    os: linux
-    dist: xenial
-    virt: lxd
-    # To support 32-bit builds, we add the i386 architecture to
-    # Ubuntu, and then install 32-bit versions of the compiler and
-    # libraries needed. For details of Debian multiarch see the wiki:
-    #
-    # https://wiki.debian.org/Multiarch
-    #
-    # Even with multiarch support, we have to do a bit of a dance.
-    #
-    # apt-get does not seem to understand dependencies for the
-    # multiarch stuff, so we have to explicitly install all of the
-    # dependencies.
-    before_script:
-        - sudo dpkg --add-architecture i386
-        - sudo apt-get update
-        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
-        - sudo apt-get install -y libssl-dev:i386
-        - sudo apt-get install -y libdb++-dev:i386
-        - sudo apt-get install -y libminiupnpc-dev:i386
-        - sudo apt-get install -y openmpi-common:i386
-        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
-    script: cd src && make -f makefile.unix -j2
-
-  - name: mintcoind Ubuntu 20.04 (static)
-    os: linux
-    dist: focal
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    script: cd src && CXX="ccache c++" make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
-
-  - name: mintcoind Ubuntu 18.04 (static)
-    os: linux
-    dist: bionic
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    script: cd src && CXX="ccache c++" make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
-
-  - name: mintcoind Ubuntu 16.04 (static)
-    os: linux
-    dist: xenial
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    script: cd src && CXX="ccache c++" make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
-
-  - name: mintcoind Ubuntu 20.04 (32-bit static)
-    os: linux
-    dist: focal
-    virt: vm
-    before_script:
-      - docker pull i386/ubuntu:focal
-    script:
-      - docker run --detach --security-opt seccomp=unconfined --name=mintcoin i386/ubuntu:focal sleep 3600
-      - docker exec mintcoin apt update
-      # - docker exec mintcoin apt upgrade -y
-      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
-      - docker cp share mintcoin:root/.
-      - docker cp src mintcoin:root/.
-      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 CFLAGS=-m32 make -f makefile.unix -j2 STATIC='all' LDFLAGS='-static'"
-    after_script:
-      - docker stop mintcoin
-      - docker rm mintcoin
-
-  - name: mintcoind Ubuntu 18.04 (32-bit static)
-    os: linux
-    dist: bionic
-    virt: vm
-    before_script:
-      - docker pull i386/ubuntu:bionic
-    script:
-      - docker run --detach --name=mintcoin i386/ubuntu:bionic sleep 3600
-      - docker exec mintcoin apt update
-      # - docker exec mintcoin apt upgrade -y
-      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
-      - docker cp share mintcoin:root/.
-      - docker cp src mintcoin:root/.
-      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 CFLAGS=-m32 make -f makefile.unix -j2 STATIC='all' LDFLAGS='-static'"
-    after_script:
-      - docker stop mintcoin
-      - docker rm mintcoin
-
-  - name: mintcoind Ubuntu 16.04 (32-bit static)
-    os: linux
-    dist: xenial
-    virt: lxd
-    # To support 32-bit builds, we add the i386 architecture to
-    # Ubuntu, and then install 32-bit versions of the compiler and
-    # libraries needed. For details of Debian multiarch see the wiki:
-    #
-    # https://wiki.debian.org/Multiarch
-    #
-    # Even with multiarch support, we have to do a bit of a dance.
-    #
-    # apt-get does not seem to understand dependencies for the
-    # multiarch stuff, so we have to explicitly install all of the
-    # dependencies.
-    before_script:
-        - sudo dpkg --add-architecture i386
-        - sudo apt-get update
-        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
-        - sudo apt-get install -y libssl-dev:i386
-        - sudo apt-get install -y libdb++-dev:i386
-        - sudo apt-get install -y libminiupnpc-dev:i386
-        - sudo apt-get install -y openmpi-common:i386
-        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
-    script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
-
-  - name: mintcoind macOS 10.14
-    os: osx
-    osx_image: xcode11.3
-    script: cd src && CXX="ccache c++" make -f makefile.osx -j2
-
-  - name: mintcoind macOS 10.14 (static)
-    os: osx
-    osx_image: xcode11.3
-    script: cd src && CXX="ccache c++" make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
-
-  - name: mintcoind macOS 10.15
-    os: osx
-    osx_image: xcode12.2
-    script: cd src && CXX="ccache c++" make -f makefile.osx -j2
-
-  - name: mintcoind macOS 10.15 (static)
-    os: osx
-    osx_image: xcode12.2
-    script: cd src && CXX="ccache c++" make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
-
-  - name: MintCoin-Qt Ubuntu 20.04
-    os: linux
-    dist: focal
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-    before_install:
-      - sudo add-apt-repository ppa:gezakovacs/ppa
-      - sudo apt update
-    install: sudo apt install qt4-qmake libqt4-dev qt4-default
-    script: qmake && CXX="ccache c++" make -j2
-
-  - name: MintCoin-Qt Ubuntu 18.04
-    os: linux
-    dist: bionic
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-          - qt4-qmake
-          - libqt4-dev
-    script: qmake && CXX="ccache c++" make -j2
-
-  - name: MintCoin-Qt Ubuntu 16.04
-    os: linux
-    dist: xenial
-    virt: lxd
-    addons:
-      apt:
-        packages:
-          - libdb++-dev
-          - libboost-all-dev
-          - libqrencode-dev
-          - libminiupnpc-dev
-          - qt4-qmake
-          - libqt4-dev
-    script: qmake && CXX="ccache c++" make -j2
-
-  - name: MintCoin-Qt Ubuntu 16.04 (32-bit)
-    os: linux
-    dist: xenial
-    virt: lxd
-    # To support 32-bit builds, we add the i386 architecture to
-    # Ubuntu, and then install 32-bit versions of the compiler and
-    # libraries needed. For details of Debian multiarch see the wiki:
-    #
-    # https://wiki.debian.org/Multiarch
-    #
-    # Even with multiarch support, we have to do a bit of a dance.
-    #
-    # apt-get does not seem to understand dependencies for the
-    # multiarch stuff, so we have to explicitly install all of the
-    # dependencies.
-    before_script:
-        - sudo dpkg --add-architecture i386
-        - sudo apt-get update
-        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
-        - sudo apt-get install -y libssl-dev:i386
-        - sudo apt-get install -y libdb++-dev:i386
-        - sudo apt-get install -y libminiupnpc-dev:i386
-        - sudo apt-get install -y openmpi-common:i386
-        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
-        - sudo apt-get install -y libqrencode-dev:i386
-        - sudo apt-get install -y qt4-qmake:i386 libqt4-dev:i386
-        - sudo apt-get install -y qtchooser:i386
-        - sudo apt-get install -y qt4-linguist-tools:i386
-        - sudo apt-get install -y libqt4-dev-bin:i386
-    script: /usr/lib/i386-linux-gnu/qt4/bin/qmake && make -j2
-
-  - name: MintCoin-Qt win32
-    os: linux
-    dist: focal
-    virt: vm
-    script: bash src/mxe-build.sh windows32-qt
-
-  # Doesn't actually run, so don't bother to build.
-  #- name: MintCoin-Qt win64
-  #  os: linux
-  #  dist: focal
-  #  virt: vm
-  #  script: bash src/mxe-build.sh windows64-qt
-
-  # Build MintCoin-Qt
-  # macOS 10.14 (Mojave)
-  #- os: osx
-  #  osx_image: xcode10.2
-  #  script: export MACOSX_DEPLOYMENT_TARGET=10.14 && open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg && brew install qrencode qt && /usr/local/opt/qt/bin/qmake && make -j2
+#  - name: mintcoind Ubuntu 20.04
+#    os: linux
+#    dist: focal
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    script: cd src && CXX="ccache c++" make -f makefile.unix -j2
+#
+#  - name: mintcoind Ubuntu 18.04
+#    os: linux
+#    dist: bionic
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    script: cd src && CXX="ccache c++" make -f makefile.unix -j2
+#
+#  - name: mintcoind Ubuntu 16.04
+#    os: linux
+#    dist: xenial
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    script: cd src && CXX="ccache c++" make -f makefile.unix -j2
+#
+#  - name: mintcoind win32
+#    os: linux
+#    dist: focal
+#    virt: vm
+#    script: bash src/mxe-build.sh windows32
+#
+#  # Doesn't actually run, so don't bother to build
+#  #- name: mintcoind win64
+#  #  os: linux
+#  #  dist: focal
+#  #  virt: vm
+#  #  script: bash src/mxe-build.sh windows64
+#
+#  - name: mintcoind Ubuntu 20.04 (32-bit)
+#    os: linux
+#    dist: focal
+#    virt: vm
+#    before_script:
+#      - docker pull i386/ubuntu:focal
+#    script:
+#      - docker run --detach --security-opt seccomp=unconfined --name=mintcoin i386/ubuntu:focal sleep 3600
+#      - docker exec mintcoin apt update
+#      # - docker exec mintcoin apt upgrade -y
+#      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+#      - docker cp share mintcoin:root/.
+#      - docker cp src mintcoin:root/.
+#      - docker exec mintcoin bash -c "cd root/src && CFLAGS=-m32 make -f makefile.unix -j2"
+#    after_script:
+#      - docker stop mintcoin
+#      - docker rm mintcoin
+#
+#  - name: mintcoind Ubuntu 18.04 (32-bit)
+#    os: linux
+#    dist: bionic
+#    virt: vm
+#    before_script:
+#      - docker pull i386/ubuntu:bionic
+#    script:
+#      - docker run --detach --name=mintcoin i386/ubuntu:bionic sleep 3600
+#      - docker exec mintcoin apt update
+#      # - docker exec mintcoin apt upgrade -y
+#      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+#      - docker cp share mintcoin:root/.
+#      - docker cp src mintcoin:root/.
+#      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 make -f makefile.unix -j2"
+#    after_script:
+#      - docker stop mintcoin
+#      - docker rm mintcoin
+#
+#  - name: mintcoind Ubuntu 16.04 (32-bit)
+#    os: linux
+#    dist: xenial
+#    virt: lxd
+#    # To support 32-bit builds, we add the i386 architecture to
+#    # Ubuntu, and then install 32-bit versions of the compiler and
+#    # libraries needed. For details of Debian multiarch see the wiki:
+#    #
+#    # https://wiki.debian.org/Multiarch
+#    #
+#    # Even with multiarch support, we have to do a bit of a dance.
+#    #
+#    # apt-get does not seem to understand dependencies for the
+#    # multiarch stuff, so we have to explicitly install all of the
+#    # dependencies.
+#    before_script:
+#        - sudo dpkg --add-architecture i386
+#        - sudo apt-get update
+#        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
+#        - sudo apt-get install -y libssl-dev:i386
+#        - sudo apt-get install -y libdb++-dev:i386
+#        - sudo apt-get install -y libminiupnpc-dev:i386
+#        - sudo apt-get install -y openmpi-common:i386
+#        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
+#    script: cd src && make -f makefile.unix -j2
+#
+#  - name: mintcoind Ubuntu 20.04 (static)
+#    os: linux
+#    dist: focal
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    script: cd src && CXX="ccache c++" make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+#
+#  - name: mintcoind Ubuntu 18.04 (static)
+#    os: linux
+#    dist: bionic
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    script: cd src && CXX="ccache c++" make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+#
+#  - name: mintcoind Ubuntu 16.04 (static)
+#    os: linux
+#    dist: xenial
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    script: cd src && CXX="ccache c++" make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+#
+#  - name: mintcoind Ubuntu 20.04 (32-bit static)
+#    os: linux
+#    dist: focal
+#    virt: vm
+#    before_script:
+#      - docker pull i386/ubuntu:focal
+#    script:
+#      - docker run --detach --security-opt seccomp=unconfined --name=mintcoin i386/ubuntu:focal sleep 3600
+#      - docker exec mintcoin apt update
+#      # - docker exec mintcoin apt upgrade -y
+#      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+#      - docker cp share mintcoin:root/.
+#      - docker cp src mintcoin:root/.
+#      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 CFLAGS=-m32 make -f makefile.unix -j2 STATIC='all' LDFLAGS='-static'"
+#    after_script:
+#      - docker stop mintcoin
+#      - docker rm mintcoin
+#
+#  - name: mintcoind Ubuntu 18.04 (32-bit static)
+#    os: linux
+#    dist: bionic
+#    virt: vm
+#    before_script:
+#      - docker pull i386/ubuntu:bionic
+#    script:
+#      - docker run --detach --name=mintcoin i386/ubuntu:bionic sleep 3600
+#      - docker exec mintcoin apt update
+#      # - docker exec mintcoin apt upgrade -y
+#      - docker exec -e DEBIAN_FRONTEND=noninteractive -e DEBCONF_NONINTERACTIVE_SEEN=true mintcoin apt install -y libdb++-dev libboost-all-dev make g++ libssl-dev
+#      - docker cp share mintcoin:root/.
+#      - docker cp src mintcoin:root/.
+#      - docker exec mintcoin bash -c "cd root/src && CXXFLAGS=-m32 CFLAGS=-m32 make -f makefile.unix -j2 STATIC='all' LDFLAGS='-static'"
+#    after_script:
+#      - docker stop mintcoin
+#      - docker rm mintcoin
+#
+#  - name: mintcoind Ubuntu 16.04 (32-bit static)
+#    os: linux
+#    dist: xenial
+#    virt: lxd
+#    # To support 32-bit builds, we add the i386 architecture to
+#    # Ubuntu, and then install 32-bit versions of the compiler and
+#    # libraries needed. For details of Debian multiarch see the wiki:
+#    #
+#    # https://wiki.debian.org/Multiarch
+#    #
+#    # Even with multiarch support, we have to do a bit of a dance.
+#    #
+#    # apt-get does not seem to understand dependencies for the
+#    # multiarch stuff, so we have to explicitly install all of the
+#    # dependencies.
+#    before_script:
+#        - sudo dpkg --add-architecture i386
+#        - sudo apt-get update
+#        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
+#        - sudo apt-get install -y libssl-dev:i386
+#        - sudo apt-get install -y libdb++-dev:i386
+#        - sudo apt-get install -y libminiupnpc-dev:i386
+#        - sudo apt-get install -y openmpi-common:i386
+#        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
+#    script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+#
+#  - name: mintcoind macOS 10.14
+#    os: osx
+#    osx_image: xcode11.3
+#    script: cd src && CXX="ccache c++" make -f makefile.osx -j2
+#
+#  - name: mintcoind macOS 10.14 (static)
+#    os: osx
+#    osx_image: xcode11.3
+#    script: cd src && CXX="ccache c++" make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
+#
+#  - name: mintcoind macOS 10.15
+#    os: osx
+#    osx_image: xcode12.2
+#    script: cd src && CXX="ccache c++" make -f makefile.osx -j2
+#
+#  - name: mintcoind macOS 10.15 (static)
+#    os: osx
+#    osx_image: xcode12.2
+#    script: cd src && CXX="ccache c++" make -f makefile.osx -j2 STATIC="all" LDFLAGS="-static"
+#
+#  - name: MintCoin-Qt Ubuntu 20.04
+#    os: linux
+#    dist: focal
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#    before_install:
+#      - sudo add-apt-repository ppa:gezakovacs/ppa
+#      - sudo apt update
+#    install: sudo apt install qt4-qmake libqt4-dev qt4-default
+#    script: qmake && CXX="ccache c++" make -j2
+#
+#  - name: MintCoin-Qt Ubuntu 18.04
+#    os: linux
+#    dist: bionic
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#          - qt4-qmake
+#          - libqt4-dev
+#    script: qmake && CXX="ccache c++" make -j2
+#
+#  - name: MintCoin-Qt Ubuntu 16.04
+#    os: linux
+#    dist: xenial
+#    virt: lxd
+#    addons:
+#      apt:
+#        packages:
+#          - libdb++-dev
+#          - libboost-all-dev
+#          - libqrencode-dev
+#          - libminiupnpc-dev
+#          - qt4-qmake
+#          - libqt4-dev
+#    script: qmake && CXX="ccache c++" make -j2
+#
+#  - name: MintCoin-Qt Ubuntu 16.04 (32-bit)
+#    os: linux
+#    dist: xenial
+#    virt: lxd
+#    # To support 32-bit builds, we add the i386 architecture to
+#    # Ubuntu, and then install 32-bit versions of the compiler and
+#    # libraries needed. For details of Debian multiarch see the wiki:
+#    #
+#    # https://wiki.debian.org/Multiarch
+#    #
+#    # Even with multiarch support, we have to do a bit of a dance.
+#    #
+#    # apt-get does not seem to understand dependencies for the
+#    # multiarch stuff, so we have to explicitly install all of the
+#    # dependencies.
+#    before_script:
+#        - sudo dpkg --add-architecture i386
+#        - sudo apt-get update
+#        - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
+#        - sudo apt-get install -y libssl-dev:i386
+#        - sudo apt-get install -y libdb++-dev:i386
+#        - sudo apt-get install -y libminiupnpc-dev:i386
+#        - sudo apt-get install -y openmpi-common:i386
+#        - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
+#        - sudo apt-get install -y libqrencode-dev:i386
+#        - sudo apt-get install -y qt4-qmake:i386 libqt4-dev:i386
+#        - sudo apt-get install -y qtchooser:i386
+#        - sudo apt-get install -y qt4-linguist-tools:i386
+#        - sudo apt-get install -y libqt4-dev-bin:i386
+#    script: /usr/lib/i386-linux-gnu/qt4/bin/qmake && make -j2
+#
+#  - name: MintCoin-Qt win32
+#    os: linux
+#    dist: focal
+#    virt: vm
+#    script: bash src/mxe-build.sh windows32-qt
+#
+#  # Doesn't actually run, so don't bother to build.
+#  #- name: MintCoin-Qt win64
+#  #  os: linux
+#  #  dist: focal
+#  #  virt: vm
+#  #  script: bash src/mxe-build.sh windows64-qt
+#
+#  # Build MintCoin-Qt
+#  # macOS 10.14 (Mojave)
+#  #- os: osx
+#  #  osx_image: xcode10.2
+#  #  script: export MACOSX_DEPLOYMENT_TARGET=10.14 && open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg && brew install qrencode qt && /usr/local/opt/qt/bin/qmake && make -j2
