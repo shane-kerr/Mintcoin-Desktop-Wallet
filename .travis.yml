@@ -14,7 +14,6 @@ matrix:
   - name: MintCoin-Qt macOS 10.14
     os: osx
     osx_image: xcode11.3
-    #script: export MACOSX_DEPLOYMENT_TARGET=10.14 && open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg && sudo xcode-select --switch /Library/Developer/CommandLineTools/ && brew install qrencode qt && QMAKE_CXX="ccache c++" /usr/local/opt/qt/bin/qmake && CXX="ccache c++" gmake -j2
     script:
       - export MACOSX_DEPLOYMENT_TARGET=10.14
       - sudo rm -rf /Library/Developer/CommandLineTools
@@ -24,6 +23,8 @@ matrix:
       - brew install qrencode qt
       - QMAKE_CXX="ccache c++" /usr/local/opt/qt/bin/qmake
       - CXX="ccache c++" gmake -j2
+
+# script: export MACOSX_DEPLOYMENT_TARGET=10.14 && open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg && sudo xcode-select --switch /Library/Developer/CommandLineTools/ && brew install qrencode qt && QMAKE_CXX="ccache c++" /usr/local/opt/qt/bin/qmake && CXX="ccache c++" gmake -j2
 
 #  - name: mintcoind Ubuntu 20.04
 #    os: linux
