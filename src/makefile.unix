@@ -54,7 +54,9 @@ LIBS+= \
  -Wl,-B$(LMODE2) \
    -l z \
    -l dl \
-   -l pthread
+   -l pthread \
+   -l leveldb \
+   -l memenv
 
 
 # Hardening
@@ -151,13 +153,8 @@ OBJS= \
 
 all: mintcoind
 
-LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
-DEFS += $(addprefix -I,$(CURDIR)/leveldb/include) -DUSE_LEVELDB
-DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
+DEFS += -DUSE_LEVELDB
 OBJS += obj/txdb-leveldb.o
-leveldb/libleveldb.a:
-	@echo "Building LevelDB ..."; cd leveldb; make libleveldb.a libmemenv.a; cd ..;
-obj/txdb-leveldb.o: leveldb/libleveldb.a
 
 test check: test_mintcoin FORCE
 	./test_mintcoin
@@ -209,6 +206,5 @@ clean:
 	-rm -f obj/*.P
 	-rm -f obj-test/*.P
 	-rm -f obj/build.h
-	cd leveldb && $(MAKE) clean && cd ..
 
 FORCE:
