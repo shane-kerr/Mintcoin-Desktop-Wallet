@@ -34,7 +34,9 @@ LIBS= \
  -l ssl \
  -l crypto \
  -l z \
- -l pthread
+ -l pthread \
+ -l leveldb \
+ -l memenv
 
 DEFS=-D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB -DBOOST_SPIRIT_THREADSAFE -DCURL_STATICLIB -DMINIUPNP_STATICLIB
 DEBUGFLAGS=-g

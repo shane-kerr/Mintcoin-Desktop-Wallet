@@ -81,7 +81,8 @@ matrix:
           - libqrencode-dev
           - libminiupnpc-dev
           - libleveldb-dev
-    script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
+          - libsnappy-dev
+    script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static -lsnappy"
 
   # Build mintcoind static
   # Ubuntu 16.04 LTS (Xenial Xerus) is our latest Ubuntu version
