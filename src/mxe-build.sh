@@ -41,7 +41,7 @@ sudo apt-get --yes install mxe-${MXE_TARGET}-openssl
 sudo apt-get --yes install mxe-${MXE_TARGET}-db
 sudo apt-get --yes install mxe-${MXE_TARGET}-boost
 sudo apt-get --yes install mxe-${MXE_TARGET}-miniupnpc
-sudo apt-get --yes install mxe-${MXE_TARGET}-libleveldb
+sudo apt-get --yes install mxe-${MXE_TARGET}-leveldb
 
 # Parallel build, based on our number of CPUs available.
 NCPU=`cat /proc/cpuinfo | grep -c ^processor`
