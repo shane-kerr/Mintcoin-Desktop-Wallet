@@ -22,6 +22,7 @@ matrix:
           - libboost-all-dev
           - libqrencode-dev
           - libminiupnpc-dev
+          - libleveldb-dev
     script: cd src && make -f makefile.unix -j2
 
   # Build mintcoind
@@ -61,6 +62,7 @@ matrix:
         - sudo apt-get install -y g++:i386 cpp:i386 gcc:i386 cpp-5:i386 gcc-5:i386 binutils:i386
         - sudo apt-get install -y libssl-dev:i386
         - sudo apt-get install -y libdb++-dev:i386
+        - sudo apt-get install -y libleveldb-dev:i386
         - sudo apt-get install -y libminiupnpc-dev:i386
         - sudo apt-get install -y openmpi-common:i386
         - sudo apt-get install -y libboost-all-dev:i386 libboost-mpi-dev:i386 libboost-mpi-python-dev:i386 libboost-python-dev:i386 libboost-python1.58-dev:i386 python:i386
@@ -78,6 +80,7 @@ matrix:
           - libboost-all-dev
           - libqrencode-dev
           - libminiupnpc-dev
+          - libleveldb-dev
     script: cd src && make -f makefile.unix -j2 STATIC="all" LDFLAGS="-static"
 
   # Build mintcoind static
@@ -146,6 +149,7 @@ matrix:
           - libminiupnpc-dev
           - qt4-qmake
           - libqt4-dev
+          - libleveldb-dev
     script: qmake && make -j2
 
   # Build MintCoin-Qt
